@@ -8,7 +8,7 @@ These are mockups, not emulator captures.
 import os, sys
 from PIL import Image
 
-OUT = sys.argv[1] if len(sys.argv) > 1 else "docs/pitch"
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "pitch")
 W, H = 256, 240
 
 NES = {}
