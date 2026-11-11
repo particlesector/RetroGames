@@ -33,10 +33,21 @@ Rules of thumb:
 |---|---|---|
 | NES | [TIDEBELL](systems/nes/tidebell/) | Complete |
 
+## Building
+
+```
+make                         # build every game
+make test                    # build and test every game
+make GAME=nes/tidebell test  # just one
+```
+
+Each game's README lists what its toolchain and tests need.
+
 ## Adding a game
 
 1. Create `systems/<system>/<game>/` (add `systems/<system>/README.md` if the system is new).
-2. Give it a `README.md` and add a row to the table above.
+2. Give it a `README.md` and a `Makefile` with `all`, `test` and `clean` targets; the root `Makefile` picks it up automatically.
+3. Add a row to the table above.
 
 ## License
 
