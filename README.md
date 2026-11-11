@@ -37,3 +37,7 @@ Rules of thumb:
 
 1. Create `systems/<system>/<game>/` (add `systems/<system>/README.md` if the system is new).
 2. Give it a `README.md` and add a row to the table above.
+
+## License
+
+[MIT](LICENSE). Everything in this repo — code, art, music, levels and ROMs — is free to use, modify, share and sell, as long as the copyright notice stays with it.
