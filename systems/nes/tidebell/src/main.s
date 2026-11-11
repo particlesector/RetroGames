@@ -1840,11 +1840,11 @@ objects_update:
     adc #8
     sta d_x
     rts
-    ; ---- jellyfish: hangs just under the surface, harmless when beached
+    ; ---- jellyfish: bobs at the surface, harmless when beached
 @jelly:
     lda water_y
     clc
-    adc #8
+    adc #2
     cmp o_rest,x
     bcc @float
     beq @float

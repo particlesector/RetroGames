@@ -3,7 +3,7 @@
 
 Solve commands:  W<x> walk to px   J/JL/JR[@x] jump (stop steering at x)   T+ T- ring the bell
                  S<x>,<y> swim to (use _ to leave an axis alone)   Z<n> wait   G wait to land
-                 K<n> wait for tide level n (storm rooms)   ?c=n ?b=n check carried/banked   C room clears
+                 K<n> wait for storm phase n   O<i><x / O<i>>x wait for object i   ?c=n ?b=n check carried/banked   C room clears
 Usage: run_tests.py [room ...] [--shots DIR] [--gif DIR] [-v]
 """
 import sys, os, re
@@ -31,11 +31,18 @@ def run(b, script, verbose=False):
             x, y = a.split(","); b.swim(None if x == "_" else int(x), None if y == "_" else int(y))
         elif c == "Z": b.wait(int(a))
         elif c == "G": b.settle()
-        elif c == "K":
+        elif c == "K":      # storm phase: 0 low, 1 rising mid, 2 high, 3 falling mid
             for _ in range(1200):
-                if b.v("tide_level") == int(a) and b.v("water_y") == b.v("tide_y", int(a)): break
+                lv = b.v("tide_level")
+                if b.v("storm_ph") & 3 == int(a) and b.v("water_y") == b.v("tide_y", lv): break
                 b.step()
-            else: raise Fail("tide level never came")
+            else: raise Fail("storm phase never came")
+        elif c == "O":      # O<slot><op><x>[&...]: wait for objects to be left/right of x
+            conds = [re.fullmatch(r"O?(\d)([<>])(\d+)", t).groups() for t in tok.split("&")]
+            for _ in range(1500):
+                if all((b.v("o_x", int(i)) < int(x)) if op == "<" else (b.v("o_x", int(i)) > int(x)) for i, op, x in conds): break
+                b.idle()
+            else: raise Fail(f"{tok} never true")
         elif c == "?":
             k, n = a.split("="); got = b.v({"c": "carried", "b": "banked"}[k])
             if got != int(n): raise Fail(f"expected {k}={n}, got {got} at {b.pos()}")

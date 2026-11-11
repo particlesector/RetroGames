@@ -13,7 +13,7 @@ class Fail(Exception): pass
 
 class Bot:
     def __init__(self, room=0, record=None):
-        self.e = Emu(ROM); self.record = record; self.done = False
+        self.e = Emu(ROM); self.record = record; self.done = False; self.hold_y = None
         self.e.frame(0, 40)
         self.e.frame(START, 2); self.e.frame(0, 20)       # title -> island card
         self.e.ram[SYM["room"]] = room
@@ -38,6 +38,9 @@ class Bot:
             if self.v("pstate") == 2: self.done = True
 
     def wait(self, n): self.step(0, n)
+    def idle(self):
+        """One frame of waiting; under water, keep the depth of the last swim command."""
+        self.step(DOWN if self.wet() and self.hold_y is not None and self.y < self.hold_y else 0)
     def settle(self, limit=120):
         for _ in range(limit):
             if self.done or self.ground() or self.wet(): return
@@ -65,7 +68,10 @@ class Bot:
     def jump(self, d=0, hold=30, x=None):
         """Jump (or hop out of water) holding direction d; optionally stop steering at px x."""
         if not (self.ground() or self.wet()): raise Fail(f"jump with nothing underfoot {self.pos()}")
-        was_wet = self.wet()
+        was_wet = self.wet(); self.hold_y = None
+        for _ in range(90):               # in water: float up to the surface first
+            if not self.wet() or self.y + 8 <= self.v("water_y") + 1: break
+            self.step(d)
         self.step(0)                      # release A so the press registers
         self.step(A | d)
         for i in range(200):
@@ -76,6 +82,7 @@ class Bot:
         raise Fail(f"jump never ended {self.pos()}")
 
     def swim(self, x=None, y=None, limit=500):
+        self.hold_y = y
         for _ in range(limit):
             pad = 0
             if x is not None and abs(self.x - x) > 1: pad |= RIGHT if x > self.x else LEFT
