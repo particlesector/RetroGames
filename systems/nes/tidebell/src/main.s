@@ -122,6 +122,7 @@ d_y:        .res 1
 d_frame:    .res 1
 d_attr:     .res 1
 name_ptr:   .res 2
+hint_ptr:   .res 2
 pw:         .res 4
 pw_pos:     .res 1
 addr_hi:    .res 1
@@ -604,6 +605,18 @@ room_begin:
     tya
     clc
     adc ptr0
+    sta hint_ptr
+    lda ptr0+1
+    adc #0
+    sta hint_ptr+1
+@n2:
+    lda (ptr0),y
+    iny
+    cmp #$FF
+    bne @n2
+    tya
+    clc
+    adc ptr0
     sta ptr0
     bcc :+
     inc ptr0+1
@@ -907,6 +920,13 @@ hud_draw:
     sta ptr0+1
     ldx #6
     ldy #1
+    jsr puts_xy
+    lda hint_ptr
+    sta ptr0
+    lda hint_ptr+1
+    sta ptr0+1
+    ldx #4
+    ldy #4
     jsr puts_xy
     PRINT 22, 2, str_tide
     lda #$23                ; ember icons use the lighthouse palette
@@ -2528,7 +2548,7 @@ icon_tbl:     .byte T_ICON_EMPTY, T_ICON_CARRY, T_ICON_BANK
 island_pals:
     .byte $0C,$1C,$2C,$30, $0C,$00,$10,$1A, $0C,$1C,$17,$37, $0C,$16,$30,$38
     .byte $01,$11,$21,$30, $01,$00,$10,$2A, $01,$11,$17,$37, $01,$16,$30,$38
-    .byte $0B,$1B,$2B,$30, $0B,$00,$10,$29, $0B,$1B,$17,$37, $0B,$15,$30,$38
+    .byte $03,$12,$22,$30, $03,$00,$10,$2A, $03,$12,$17,$37, $03,$15,$30,$38
     .byte $0F,$0C,$1C,$30, $0F,$00,$10,$0B, $0F,$0C,$07,$17, $0F,$06,$10,$28
     .byte $0F,$0C,$1C,$30, $0F,$00,$10,$1A, $0F,$0C,$17,$37, $0F,$16,$30,$38
 sprite_pals:

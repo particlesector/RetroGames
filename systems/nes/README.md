@@ -7,4 +7,4 @@ Nintendo Entertainment System / Famicom projects.
 
 | Game | Status |
 |---|---|
-| [TIDEBELL](tidebell/) | Pitch |
+| [TIDEBELL](tidebell/) | Complete |

@@ -28,7 +28,12 @@ for ln, line in enumerate(open(src), 1):
     if m:
         cur = {"kind": m.group(1), "name": m.group(2) or m.group(3), "rows": [], "tide": [212, 180, 148],
                "start": 0, "storm": False, "pal": None, "line": ln}
-        for a in m.group(4).split():
+        rest = m.group(4)
+        hm = re.search(r'hint="([^"]*)"', rest)
+        cur["hint"] = hm.group(1) if hm else ""
+        assert len(cur["hint"]) <= 24, f"levels.txt:{ln}: hint longer than 24"
+        if hm: rest = rest.replace(hm.group(0), "")
+        for a in rest.split():
             if a.startswith("tide="): cur["tide"] = [int(v) for v in a[5:].split(",")]
             elif a.startswith("start="): cur["start"] = int(a[6:])
             elif a.startswith("pal="): cur["pal"] = int(a[4:])
@@ -83,7 +88,7 @@ for n, r in enumerate(game + scenes):
         assert 1 <= ne <= 4, f"{where}: need 1-4 embers"
         assert len(objs) - ne <= 8, f"{where}: too many objects"
         top = r["tide"][2] // 16 - 2          # first row the high tide touches
-        spots = [(x, y) for y in range(0, 3) for x in range(1, 14)
+        spots = [(x, y) for y in range(1 if r["hint"] else 0, 3) for x in range(1, 14)
                  if y + 1 < top and all(cells[y + dy][x + dx] == 0 and (x + dx, y + dy) not in busy
                                         for dx in (0, 1) for dy in (0, 1))]
         if spots:
@@ -99,7 +104,7 @@ for n, r in enumerate(game + scenes):
     px, py = pim if pim else (0, 0)
     out.append(f"room_{n}:  ; {r['name']}")
     out.append(f"  .byte {r['tide'][0]}, {r['tide'][1]}, {r['tide'][2]}, ${flags:02X}, {px}, {py}, {pal}")
-    out.append(f'  .byte "{r["name"].upper() if r["kind"] == "room" else ""}", $FF')
+    out.append(f'  .byte "{r["name"].upper() if r["kind"] == "room" else ""}", $FF, "{r["hint"]}", $FF')
     for row in cells: out.append("  .byte " + ", ".join(str(v) for v in row))
     out.append("  .byte " + "".join(f"{t}, {x}, {y}, " for t, x, y in objs) + "$FF")
 out.append("room_lo: .byte " + ", ".join(f"<room_{i}" for i in range(len(rooms))))

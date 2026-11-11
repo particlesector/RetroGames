@@ -1,7 +1,7 @@
 ; TIDEBELL rooms. See tools/build_levels.py for the map legend.
 ; tide=low,mid,high are waterline scanlines; a floor at row top T is dry when tide >= T+4.
 
-room "FIRST LIGHT" tide=196,180,164
+room "FIRST LIGHT" hint="A: JUMP   SELECT: RETRY" tide=196,180,164
 solve: W72 JR W160 ?c=1 JR W190 C
 ................
 ................
@@ -17,7 +17,7 @@ solve: W72 JR W160 ?c=1 JR W190 C
 #####::#########
 ################
 
-room "THE TIDEBELL" tide=196,180,164 start=1
+room "THE TIDEBELL" hint="B: FLOOD   DOWN+B: EBB" tide=196,180,164 start=1
 solve: T- W178 JR W216 ?c=1 W66 JL W20 C
 ................
 ................
@@ -33,7 +33,7 @@ solve: T- W178 JR W216 ?c=1 W66 JL W20 C
 ################
 ################
 
-room "DRIFTWOOD"
+room "DRIFTWOOD" hint="EMBERS DIE IN WATER"
 solve: W58 ?c=1 W128 JR@152 T+ T+ W190 C
 ................
 ................
@@ -49,7 +49,7 @@ solve: W58 ?c=1 W128 JR@152 T+ T+ W190 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "HIGH AND DRY"
+room "HIGH AND DRY" hint="RIDE THE DRIFTWOOD"
 solve: W98 JL@80 T+ T+ JL W36 ?c=1 W70 G T- T- W204 C
 ................
 ................
@@ -129,7 +129,7 @@ solve: JR W106 ?c=1 W142 G ?c=2 JL W82 G JL@66 T+ T+ JL W22 ?c=3 W54 G T- T- W82
 ::::::::::::::::
 ::::::::::::::::
 
-room "SLEEPY CRABS" tide=212,202,180
+room "SLEEPY CRABS" hint="CRABS SLEEP WHEN WET" tide=212,202,180
 solve: T+ W178 G JR W210 ?c=1 W66 G JL W22 C
 ................
 ................
@@ -145,7 +145,7 @@ solve: T+ W178 G JR W210 ?c=1 W66 G JL W22 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "JELLYFISH"
+room "JELLYFISH" hint="DIVE UNDER JELLYFISH"
 solve: T+ T+ O0>130 S66,172 S178,172 O0<120 S_,141 JR W220 ?c=1 T- T- W66 G JL W22 C
 ................
 ................
@@ -225,7 +225,7 @@ solve: T+ S_,176 S178,176 O0<120&O2<120 S_,141 JR W220 ?c=1 T- W52 G JL W22 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "URCHIN ROW"
+room "URCHIN ROW" hint="JUMP THE URCHINS"
 solve: T+ S226,_ T- G ?c=1 W214 JL JL W102 JL W44 JL W22 C
 ................
 ................
@@ -257,7 +257,7 @@ solve: T+ S_,141 JL W22 ?c=1 T- W50 G W114 JR@130 ?c=2 W150 G W160 JR@180 T+ JR 
 ::::::::::::::::
 ::::::::::::::::
 
-room "CORAL GATE" start=1
+room "CORAL GATE" hint="CORAL OPENS IN AIR" start=1
 solve: T- W204 G ?c=1 W66 G JL W22 C
 ................
 ................
@@ -273,7 +273,7 @@ solve: T- W204 G ?c=1 W66 G JL W22 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "SANDCASTLE"
+room "SANDCASTLE" hint="SAND MELTS IN WATER"
 solve: T+ T+ S178,_ JR W220 ?c=1 T- T- W22 C
 ................
 ................
@@ -385,7 +385,7 @@ solve: W204 ?c=1 W100 JL@80 T+ JL W40 ?c=2 W70 G W88 JR@120 W216 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "STORMBREAK" storm
+room "STORMBREAK" hint="THE STORM RINGS THE BELL" storm
 solve: W110 G ?c=1 W162 JR@172 W194 JR W216 C
 ................
 ................
@@ -513,7 +513,7 @@ solve: W40 K1 W84 G JR@100 ?c=1 W160 G JR@180 K2 JR W216 C
 ::::::::::::::::
 ::::::::::::::::
 
-room "THE LAST LIGHT" tide=212,202,148 start=1
+room "THE LAST LIGHT" hint="BRING THEM ALL HOME" tide=212,202,148 start=1
 solve: T+ S_,141 JL W22 ?c=1 T- W50 G W84 JR@98 ?c=2 JR@114 ?c=3 W134 G W160 JR@180 T+ JR W216 C
 ................
 ................

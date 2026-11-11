@@ -1,6 +1,6 @@
 # TIDEBELL — a tale of the last lighthouse
 
-*Pitch for an original NES game. Status: concept + demo art only — no ROM yet.*
+*The original pitch, kept for reference. The game has since been built; see the [README](../../README.md). Some details changed along the way (sluice gates became coral and sandcastles).*
 
 ![Title screen mockup](title.png)
 

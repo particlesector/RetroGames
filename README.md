@@ -14,6 +14,8 @@ systems/
       assets/            source art, music and level data
       src/               code
       tools/             scripts used only by this game
+      tests/             automated tests
+      release/           the current playable ROM
       build/             build output (git-ignored)
 shared/                  anything used by more than one game or system
 ```
@@ -23,13 +25,13 @@ Rules of thumb:
 - A game folder builds on its own; it never reaches into another game's folder.
 - Code or tools needed by two games move to `shared/` (or `systems/<system>/common/` if system-specific).
 - Folder names are lowercase, no spaces: `systems/gb/my-game`.
-- Build output and ROMs stay out of git; publish ROMs as releases.
+- Build output stays out of git; each game keeps one current ROM in `release/`.
 
 ## Games
 
 | System | Game | Status |
 |---|---|---|
-| NES | [TIDEBELL](systems/nes/tidebell/) | Pitch |
+| NES | [TIDEBELL](systems/nes/tidebell/) | Complete |
 
 ## Adding a game
 

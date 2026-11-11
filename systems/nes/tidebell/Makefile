@@ -23,6 +23,7 @@ $(ROM): $(B)/main.o src/tidebell.cfg
 
 test: $(ROM)
 	python3 tests/run_tests.py
+	python3 tests/test_flows.py
 
 clean:
 	rm -rf $(B)
