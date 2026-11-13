@@ -32,6 +32,7 @@ Rules of thumb:
 | System | Game | Status |
 |---|---|---|
 | NES | [TIDEBELL](systems/nes/tidebell/) | Complete |
+| NES | [DRYLINE Grand Prix](systems/nes/dryline/) | Pitch |
 
 ## Building
 

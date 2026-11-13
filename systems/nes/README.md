@@ -8,3 +8,4 @@ Nintendo Entertainment System / Famicom projects.
 | Game | Status |
 |---|---|
 | [TIDEBELL](tidebell/) | Complete |
+| [DRYLINE Grand Prix](dryline/) | Pitch |

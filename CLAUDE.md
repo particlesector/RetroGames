@@ -30,6 +30,8 @@ The owner writes C++ professionally and tests on FPGA hardware (and MesenCE for 
   the bot cannot clear does not ship.
 - After changing a game, run its tests, rebuild, and copy the ROM to `release/` in the same commit.
 - State plainly what was not verified (real hardware, other emulators, how audio sounds).
+- Keep a dev log for each game in `docs/devlog/`, one numbered entry per milestone, written for a
+  general reader: what was tried, what failed and why, with pictures. It is site content.
 - No model names in commits, code or docs.
 
 ## Testing harness
