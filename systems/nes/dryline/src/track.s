@@ -78,6 +78,12 @@ load_track:
     sta ptr1+1
     SETCNT 960
     jsr copy_ram
+    lda #<wp_x
+    sta ptr1
+    lda #>wp_x
+    sta ptr1+1
+    SETCNT MAXWP*4
+    jsr copy_ram
     lda #BANK_RACE1
     jsr map_a000
     ; tile banks

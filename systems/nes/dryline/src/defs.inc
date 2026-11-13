@@ -41,6 +41,10 @@ oam = $0200
 ; battery RAM
 wetmap  = $6000             ; one byte per 8x8 tile: bit 7 can dry, bit 6 kerb-cell tile, bits 0-1 dryness
 surface = $6400             ; 2 bits per 4x4 pixels: 0 road, 1 grass, 2 gravel, 3 solid
+wp_x    = $6800             ; racing line: MAXWP waypoints, four parallel arrays
+wp_y    = wp_x + 96
+wp_a    = wp_y + 96         ; heading towards the next waypoint
+wp_s    = wp_a + 96         ; speed limit in 1/64 pixel per frame
 
 .segment "ZEROPAGE"
 tmp0:        .res 1
@@ -83,6 +87,7 @@ nxh:         .res 1
 nyl:         .res 1
 nyh:         .res 1
 sgn:         .res 1
+demo:        .res 1
 
 .segment "BSS"
 vbuf:        .res 96        ; NMI VRAM queue: hi, lo, len, data..., 0
