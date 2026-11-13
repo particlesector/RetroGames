@@ -30,8 +30,11 @@ e = Emu(ROM); e.frame(0, 10)
 for f in range(60 * 30): e.frame(0)
 check("a player who never moves is classified last", v(e, "c_pos") == 4)
 check("rivals lap a parked player without getting stuck", all(v(e, "c_lap", i) >= 3 for i in (1, 2, 3)), str([v(e, "c_lap", i) for i in range(4)]))
-# driving the wrong way earns nothing
-e = Emu(ROM); e.frame(0, 210)
-e.frame(A, 8); e.frame(A | LEFT, 43); e.frame(A, 50)
-check("driving backwards does not count laps", v(e, "c_lap") == 0)
+# shuttling back and forth over the line earns nothing
+e = boot()
+for i in (1, 2, 3): e.ram[SYM["c_yh"] + i] = 60          # move the rivals out of the way
+e.frame(A, 45); first = val(e, "c_lap")
+for _ in range(3):
+    e.ram[SYM["c_ang"]] = (val(e, "c_ang") + 128) & 255; e.ram[SYM["c_spd"]] = 0; e.frame(A, 45)
+check("crossing the line again and again counts one lap, not four", first == 1 and val(e, "c_lap") == 1, f"lap {val(e, 'c_lap')}")
 if __name__ == "__main__": finish()

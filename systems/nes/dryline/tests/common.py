@@ -25,3 +25,13 @@ def same_picture(a, b):
             if fwd.setdefault(pa, pb) != pb or back.setdefault(pb, pa) != pa: ok = False
         if not ok: bad.append(y)
     return bad
+
+def val(e, name, i=0): return int(e.ram[SYM[name] + i])
+
+def boot(track=0, demo=False, lights=False):
+    """Start the ROM on a circuit; unless lights=True, skip the start sequence."""
+    e = Emu(ROM); e.frame(0, 10)
+    if demo: e.ram[SYM["demo"]] = 1
+    if not lights:
+        e.ram[SYM["race_timer"]] = 1; e.frame(0, 2)
+    return e
