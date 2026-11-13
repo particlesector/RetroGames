@@ -1,0 +1,74 @@
+; TIDEBELL soundtrack. One tick = a sixteenth note; speed = frames per tick.
+; Tokens: note+octave (c4, f#5), r rest, :N length in ticks, lN default length,
+; @N instrument, {..}xN repeat, | bar line (ignored), L loop point.
+; Noise channel: k kick, s snare, h hat, nK raw period.
+
+song title speed=9
+P1: @0 l2 d5:4 b4 d5 g5:4 d5 b4 | e5:4 b4 e5 g5:4 e5 b4 | e5:4 c5 e5 g5:4 e5 c5 | f#5:4 d5 f#5 a5:8
+P1: b5:4 a5 g5 d5:4 b4 d5 | g5:4 f#5 e5 b4:4 g4 b4 | c5 e5 g5 e5 d5 f#5 a5 f#5 | g5:12 r:4
+P2: @2 l2 {g3 b3 d4 b3}x2 {e3 g3 b3 g3}x2 {c4 e4 g4 e4}x2 {d4 f#4 a4 f#4}x2
+P2: {g3 b3 d4 b3}x2 {e3 g3 b3 g3}x2 c4 e4 g4 e4 d4 f#4 a4 f#4 g3 b3 d4 g4 d4 b3 g3:4
+TR: @0 l8 g2 g2 e2 e2 c3 c3 d3 d3 g2 g2 e2 e2 c3 d3 g2:12 r:4
+NO: l4 {h r h r}x8
+
+song shanty speed=7
+P1: @0 l2 d5:4 d5 f5:4 a5 | g5:4 f5 e5:4 d5 | c5:4 c5 e5:4 g5 | e5:4 d5 e5:6
+P1: d5:4 d5 f5:4 a5 | a#5:4 a5 g5:4 f5 | e5:4 f5 e5:4 c#5 | d5:12
+P1: a5:4 a5 a5:4 c6 | g5:4 g5 g5:4 e5 | f5:4 e5 d5:4 f5 | e5:6 c#5:6
+P1: a5:4 a5 a5:4 c6 | g5:4 e5 c5:4 e5 | d5:4 f5 e5:4 c#5 | d5:12
+P2: @2 l2 {r f4 a4}x4 {r e4 g4}x2 {r c#4 e4}x2 {r f4 a4}x2 {r d4 f4}x2 {r c#4 e4}x2 {r f4 a4}x2
+P2: {r a4 c5}x2 {r e4 g4}x2 {r f4 a4}x2 {r c#4 e4}x2 {r a4 c5}x2 {r e4 g4}x2 r f4 a4 r c#4 e4 {r f4 a4}x2
+TR: @1 l2 {d3:4 a3 d3:4 a3}x2 c3:4 g3 c3:4 g3 a2:4 e3 a2:4 e3 d3:4 a3 d3:4 a3 a#2:4 f3 a#2:4 f3 a2:4 e3 a2:4 e3 d3:4 a3 d3:4 a3
+TR: f3:4 c4 f3:4 c4 c3:4 g3 c3:4 g3 d3:4 a3 d3:4 a3 a2:4 e3 a2:4 e3 f3:4 c4 f3:4 c4 c3:4 g3 c3:4 g3 d3:4 a3 a2:4 e3 d3:4 a3 d3:4 a3
+NO: l2 {k:4 h s:4 h}x16
+
+song shoals speed=8
+P1: @0 l2 a4:4 c5 e5 a5:6 e5 | f5:4 c5 f5 a5:6 f5 | g5:4 e5 c5 e5:6 g5 | d5:4 b4 d5 g5:8
+P1: a5:4 e5 c5 e5:4 a5 c6 | c6:4 a5 f5 a5:8 | b5:4 g5 d5 g5:4 b5 d6 | a5:12 r:4
+P2: @8 l2 a3 e4 a4 e4 c5 e4 a4 e4 | f3 c4 f4 c4 a4 c4 f4 c4 | c4 g4 c5 g4 e5 g4 c5 g4 | g3 d4 g4 d4 b4 d4 g4 d4
+P2: a3 e4 a4 e4 c5 e4 a4 e4 | f3 c4 f4 c4 a4 c4 f4 c4 | g3 d4 g4 d4 b4 d4 g4 d4 | a3 e4 a4 e4 c5 e4 a4 e4
+TR: @0 l8 a2 e3 f2 c3 c3 g3 g2 d3 a2 e3 f2 c3 g2 d3 a2 a2
+NO: l4 {h r r r}x8
+
+song storm speed=6
+P1: @0 l2 e5 e5 g5 e5 b5:4 a5 g5 | e5 e5 g5 e5 d5:4 e5:4 | c5 c5 e5 c5 g5:4 f#5 e5 | d5 d5 f#5 d5 a5:8
+P1: e5 e5 g5 e5 b5:4 a5 g5 | g5 b5 d6 b5 g5:4 a5 b5 | c6:4 b5 a5 b5:4 a5 f#5 | e5:12 r:4
+P2: @2 l2 {e3 b3}x8 {c3 g3}x4 {d3 a3}x4 {e3 b3}x4 {g3 d4}x4 {c3 g3}x2 {b2 f#3}x2 {e3 b3}x4
+TR: @1 l4 {e2}x8 {c3}x4 {d3}x4 {e2}x4 {g2}x4 c3 c3 b2 b2 {e2}x4
+NO: l2 {k h s h}x16
+
+song ending speed=8
+P1: @0 l4 g5 b5 d6:8 | e6 d6:2 c6:2 e6:8 | d6 b5 g5:8 | a5 f#5:2 a5:2 d6:8
+P1: b5 g5 e5:8 | c6 e6 c6:8 | a5 b5 a5:8 | g5:16
+P2: @2 l2 {g3 b3 d4 b3}x2 {c4 e4 g4 e4}x2 {g3 b3 d4 b3}x2 {d4 f#4 a4 f#4}x2
+P2: {e3 g3 b3 g3}x2 {c4 e4 g4 e4}x2 {d4 f#4 a4 f#4}x2 {g3 b3 d4 b3}x2
+TR: @0 l8 g2 g2 c3 c3 g2 g2 d3 d3 e2 e2 c3 c3 d3 d3 g2 g2
+NO: l4 {k h s h}x8
+
+sfx jump
+P: @6 l2 c5 g5
+sfx bell_up
+P: @3 l5 e6 l14 a6
+sfx bell_down
+P: @3 l5 a6 l14 e6
+sfx deny
+P: @6 l4 c3 r:2 c3
+sfx pickup
+P: @3 l3 e6 g6 b6
+sfx fizz
+N: @7 l30 n4
+sfx bank
+P: @3 l4 c6 e6 g6 l10 c7
+sfx death
+P: @6 l3 a5 g5 e5 c5 a4 g4 e4 c4
+N: @5 l6 n10 n12
+sfx splash
+N: @7 l20 n6
+sfx clear
+P: @3 l6 g5 b5 d6 l24 g6
+sfx menu
+P: @6 l3 a5
+sfx thunder
+N: @7 l40 n14
+sfx start
+P: @3 l5 c6 g6 l12 c7
