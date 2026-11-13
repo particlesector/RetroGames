@@ -1,0 +1,25 @@
+# Circuit 1. Coordinates are screen pixels; the track area is y 32..239.
+name = "MEADOW RING"
+theme = "meadow"
+half_width = 18
+laps = 6
+# closed centre line, in driving order
+points = [[40,214],[128,216],[214,214],[236,190],[228,164],[190,158],[140,160],[96,160],[70,148],[66,122],
+          [90,106],[140,106],[190,106],[228,96],[236,72],[214,56],[150,54],[90,56],[44,58],[22,84],[22,140],[22,190]]
+start = [150, 216]          # start/finish line crosses the centre line nearest this point
+
+[[scenery]]
+kind = "lake"
+at = [150, 132]
+size = [26, 7]
+[[scenery]]
+kind = "gravel"
+at = [250, 226]
+size = [10, 14]
+[[scenery]]
+kind = "gravel"
+at = [44, 132]
+size = [8, 14]
+[[scenery]]
+kind = "trees"
+at = [[112, 176], [144, 176], [176, 176], [0, 32], [240, 32], [0, 224], [240, 112], [112, 80], [160, 80]]
