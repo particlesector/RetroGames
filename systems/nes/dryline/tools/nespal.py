@@ -9,18 +9,21 @@ _rows = [
 NES = np.array([[int(h[i:i + 2], 16) for i in (0, 2, 4)] for r in _rows for h in r.split()], dtype=np.int32)
 
 # pixel roles used while drawing a circuit
-G, GD, GL, SA, RO, DR, WH, RE, WA, WL = range(10)
-ROLES = ["GRASS", "GDARK", "GLIGHT", "SAND", "ROAD", "DRIED", "WHITE", "RED", "WATER", "WLIGHT"]
+G, GD, GL, SA, RO, WH, RE, WA, WL, WW, K, GY, AC = range(13)
+ROLES = ["GROUND", "GDARK", "GLIGHT", "SAND", "ROAD", "WHITE", "KERB", "WATER", "WLIGHT", "WWHITE", "BLACK", "GREY", "ACCENT"]
 
-# background palettes as roles. Entry 0 is the shared backdrop.
-#   0 kerbs    1 nature    2 water    3 road (entry 3 = tarmac the cars have dried)
-PALS = [[G, RO, WH, RE], [G, GD, GL, SA], [G, WA, WL, WH], [G, RO, WH, DR]]
+# Background palettes as roles. Entry 0 is the shared backdrop (the ground).
+#   0 road: tarmac, paint, kerb. In rain the kerb colour becomes "dried tarmac", which is
+#     what lets one palette show both the wet road and the dry line.
+#   1 nature   2 water   3 structures and the HUD
+PALS = [[G, RO, WH, RE], [G, GD, GL, SA], [G, WA, WL, WW], [G, K, GY, AC]]
 
-# theme -> role -> NES colour, in fair weather and in rain. In rain ROAD is the dark wet
-# surface and DRIED is the normal tarmac colour, so the dry line appears by itself.
+# theme -> role -> NES colour, fair weather then rain
 THEMES = {
-    "meadow": (dict(GRASS=0x1A, GDARK=0x0A, GLIGHT=0x2A, SAND=0x38, ROAD=0x00, DRIED=0x00, WHITE=0x30, RED=0x16, WATER=0x11, WLIGHT=0x21),
-               dict(GRASS=0x0A, GDARK=0x09, GLIGHT=0x1A, SAND=0x28, ROAD=0x0C, DRIED=0x00, WHITE=0x30, RED=0x16, WATER=0x01, WLIGHT=0x11)),
+    "meadow": (dict(GROUND=0x1A, GDARK=0x0A, GLIGHT=0x2A, SAND=0x38, ROAD=0x00, WHITE=0x30, KERB=0x16,
+                    WATER=0x11, WLIGHT=0x21, WWHITE=0x30, BLACK=0x0F, GREY=0x10, ACCENT=0x28),
+               dict(GROUND=0x0A, GDARK=0x09, GLIGHT=0x1A, SAND=0x28, ROAD=0x0C, WHITE=0x30, KERB=0x00,
+                    WATER=0x01, WLIGHT=0x11, WWHITE=0x21, BLACK=0x0F, GREY=0x10, ACCENT=0x28)),
 }
 
 def palette_bytes(theme, rain):

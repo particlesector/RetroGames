@@ -15,6 +15,7 @@
 .include "track.s"
 .include "race.s"
 .include "weather.s"
+.include "hud.s"
 .include "tracks.inc"
 
 .segment "RODATA"

@@ -28,10 +28,13 @@ def same_picture(a, b):
 
 def val(e, name, i=0): return int(e.ram[SYM[name] + i])
 
-def boot(track=0, demo=False, lights=False):
-    """Start the ROM on a circuit; unless lights=True, skip the start sequence."""
+def boot(track=0, demo=False, lights=False, solo=False):
+    """Start the ROM on a circuit; unless lights=True, skip the start sequence.
+    solo=True holds the rivals on the grid (as if being serviced) for about four seconds."""
     e = Emu(ROM); e.frame(0, 10)
     if demo: e.ram[SYM["demo"]] = 1
     if not lights:
         e.ram[SYM["race_timer"]] = 1; e.frame(0, 2)
+    if solo:
+        for i in (1, 2, 3): e.ram[SYM["c_serv"] + i] = 250
     return e

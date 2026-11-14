@@ -24,9 +24,6 @@ c_skill:.res NCARS          ; rivals: share of the speed limit they dare, /256
 race_state: .res 1          ; 0 grid, 1 racing, 2 player finished
 race_timer: .res 1
 fin_count:  .res 1
-hud_lap:    .res 1          ; what the HUD currently shows
-hud_pos:    .res 1
-hud_msg:    .res 1
 ai_dx:      .res 1
 ai_dy:      .res 1
 ai_c:       .res 2
@@ -51,10 +48,7 @@ race_begin:
     sta fin_count
     sta race_time
     sta race_time+1
-    lda #$FF
-    sta hud_lap
-    sta hud_pos
-    sta hud_msg
+    jsr hud_init
     lda #1
     sta split_on
     jmp ppu_on
@@ -586,126 +580,6 @@ rank:
     bpl @i
     rts
 
-; Redraw the parts of the HUD that changed.
-hud_update:
-    lda c_lap
-    bne :+
-    lda #1
-:   cmp track_laps
-    bcc :+
-    lda track_laps
-:   cmp hud_lap
-    bne @redraw
-    lda c_pos
-    cmp hud_pos
-    bne @redraw
-    jmp @msg
-@redraw:
-    sta tmp0
-    lda c_lap
-    bne :+
-    lda #1
-:   cmp track_laps
-    bcc :+
-    lda track_laps
-:   sta hud_lap
-    lda c_pos
-    sta hud_pos
-    ldx vb_pos
-    lda #$20
-    sta vbuf,x
-    lda #$21
-    sta vbuf+1,x
-    lda #14
-    sta vbuf+2,x
-    ldy #0
-@t: lda str_hud,y
-    sta vbuf+3,x
-    inx
-    iny
-    cpy #14
-    bne @t
-    lda #0
-    sta vbuf+3,x
-    lda hud_lap
-    clc
-    adc #T_0
-    sta vbuf+3-14+4,x
-    lda track_laps
-    clc
-    adc #T_0
-    sta vbuf+3-14+6,x
-    lda hud_pos
-    clc
-    adc #T_0
-    sta vbuf+3-14+13,x
-    txa
-    clc
-    adc #3
-    sta vb_pos
-@msg:
-    ldy #0                  ; message: which light, or the flag
-    lda race_state
-    cmp #RS_DONE
-    bne :+
-    ldy #5
-    bne @have
-:   cmp #RS_RACE
-    bne :+
-    ldy #4
-    lda race_time+1
-    bne @blank
-    lda race_time
-    cmp #90
-    bcc @have
-@blank:
-    ldy #0
-    beq @have
-:   lda race_timer
-    cmp #150
-    bcs @have
-    iny
-    cmp #100
-    bcs @have
-    iny
-    cmp #50
-    bcs @have
-    iny
-@have:
-    cpy hud_msg
-    beq @r
-    sty hud_msg
-    tya
-    asl a
-    asl a
-    asl a
-    tay
-    ldx vb_pos
-    lda #$20
-    sta vbuf,x
-    lda #$41
-    sta vbuf+1,x
-    lda #8
-    sta vbuf+2,x
-    lda #8
-    sta tmp0
-@m: lda str_msgs,y
-    sta vbuf+3,x
-    inx
-    iny
-    dec tmp0
-    bne @m
-    lda #0
-    sta vbuf+3,x
-    txa
-    clc
-    adc #3
-    sta vb_pos
-@r: rts
-
-str_hud:  .byte "LAP 1-1  POS 1"
-str_msgs: .byte "        ", "READY   ", "READY  .", "READY ..", "GO!     ", "FINISH! "
-
 ; A * X, unsigned -> prod (16 bits), by the quarter-square method.
 mul8:
     sta m_a
@@ -1031,7 +905,7 @@ car_update:
     lda nyh
     cmp #TOP+8
     bcc @hit
-    cmp #232
+    cmp #238                ; circuits may run right to the bottom edge
     bcs @hit
     ldx nxh
     ldy nyh

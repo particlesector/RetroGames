@@ -1,31 +1,50 @@
 # Circuit 1. Coordinates are screen pixels; the track area is y 32..239.
+# Scenery sits on the 16-pixel grid (x multiple of 16, y multiple of 8).
 name = "MEADOW RING"
 theme = "meadow"
-half_width = 18
+half_width = 16
 laps = 6
 # closed centre line, in driving order
-points = [[40,214],[128,216],[214,214],[236,190],[228,164],[190,158],[140,160],[96,160],[70,148],[66,122],
-          [90,106],[140,106],[190,106],[228,96],[236,72],[214,56],[150,54],[90,56],[44,58],[22,84],[22,140],[22,190]]
-start = [150, 216]
+points = [[40,224],[128,224],[204,224],[232,214],[240,190],[240,140],[240,100],[232,74],[208,64],
+          [128,64],[48,64],[24,72],[16,90],[24,106],[44,112],[100,112],[132,112],[150,122],[156,136],
+          [150,150],[132,160],[100,160],[40,160],[20,172],[16,196],[22,216]]
+start = [150, 224]          # start/finish line crosses the centre line nearest this point
 weather = [20, 45]          # rain from 20 s to 45 s
 
 [pit]
-at = [52, 184]              # top-left corner of the pit bay
-size = [60, 16]
-          # start/finish line crosses the centre line nearest this point
+at = [48, 192]              # top-left corner of the pit bay
+size = [66, 16]
 
 [[scenery]]
+kind = "pits"
+at = [48, 176]
+cells = 3
+[[scenery]]
+kind = "stand"
+at = [144, 176]
+cells = 4
+[[scenery]]
 kind = "lake"
-at = [150, 132]
-size = [26, 7]
-[[scenery]]
-kind = "gravel"
-at = [250, 226]
-size = [10, 14]
-[[scenery]]
-kind = "gravel"
-at = [44, 132]
-size = [8, 14]
+at = [200, 124]
+size = [21, 23]
 [[scenery]]
 kind = "trees"
-at = [[144, 176], [176, 176], [0, 32], [240, 32], [0, 224], [240, 112], [112, 80], [160, 80]]
+at = [[0, 32], [16, 32], [64, 32], [128, 32], [176, 32], [240, 32], [0, 128], [176, 160], [208, 176]]
+[[scenery]]
+kind = "pines"
+at = [[32, 32], [96, 32], [112, 32], [160, 32], [224, 32], [16, 128], [208, 160]]
+[[scenery]]
+kind = "boards"
+at = [[48, 40], [80, 40], [144, 40], [192, 40], [208, 40]]
+[[scenery]]
+kind = "tents"
+at = [[192, 160]]
+[[scenery]]
+kind = "trucks"
+at = [[128, 192]]
+[[scenery]]
+kind = "bushes"
+at = [[64, 88], [96, 88], [128, 88], [160, 88], [192, 88], [112, 128]]
+[[scenery]]
+kind = "flowers"
+at = [[80, 80], [112, 80], [144, 80], [176, 80]]

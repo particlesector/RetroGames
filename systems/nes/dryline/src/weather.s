@@ -25,8 +25,6 @@ c_want:     .res NCARS      ; tyre being fitted
 c_arm:      .res NCARS      ; 1 once the car has left the pit box
 c_pit:      .res NCARS      ; rival is heading for the pits
 c_pitlap:   .res NCARS      ; lap on which a rival last made its pit decision
-hud_wx:     .res 1          ; forces a redraw of the forecast when it differs from wx_sec
-hud_tyre:   .res 1
 
 .segment "RACE1"
 
@@ -37,9 +35,6 @@ weather_init:
     sta wx_sec
     sta wx_frames
     sta sweep_on
-    lda #$FF
-    sta hud_wx
-    sta hud_tyre
     lda rng
     ora rng+1
     bne :+
@@ -169,8 +164,7 @@ weather_tick:
     ldx vb_pos
     cpx #VB_LIMIT
     bcs @r                  ; queue full: carry on next frame
-    lda (ptr1),y
-    and #$C0
+    lda #$80
     sta (ptr1),y
     jsr tile_redraw
 @clean:
@@ -251,17 +245,9 @@ tile_dry:
 tile_redraw:
     ldy #0
     lda (ptr1),y
-    pha
     and #3
-    sta tmp0
-    pla
-    and #$40
-    beq :+
-    lda #T_ROADK
-    bne :++
-:   lda #T_ROAD
-:   clc
-    adc tmp0
+    clc
+    adc #T_ROAD
     ldx vb_pos
     sta vbuf+3,x
     lda ptr1+1

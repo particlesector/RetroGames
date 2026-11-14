@@ -17,10 +17,11 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE); sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "..", "shared", "tools"))
 from nespal import *
+import scenery as sc
 from font5x7 import FONT
 
 W, H, TOP = 256, 240, 32            # the top 32 pixels are the HUD
-ROAD, ROADK = 0x01, 0x04            # pure road tile in a road cell / in a kerb cell; +1, +2 = drying, dry
+ROAD = 0x01                         # pure road tile; +1 and +2 are its half-dry and dry versions
 FONT_BASE, COMMON_BASE, UNIQUE_BASE = 0x10, 0x50, 0x80
 MAX_BANDS, PAGES_PER_TRACK = 4, 10  # 2 common pages + 4 bands x 2 pages
 MAXWP = 96                          # waypoints per circuit
@@ -85,64 +86,75 @@ def racing_line(t, g):
 
 # ------------------------------------------------------------------ drawing
 def draw(t, g):
-    """-> (role image, solid mask). Everything is built from repeating patterns to keep tiles few."""
+    """-> (role image, solid mask). Scenery sits on the 16-pixel grid so each cell needs one palette."""
     half = t["half_width"]; ys, xs = np.mgrid[0:H, 0:W]
-    tex = np.full((16, 16), G)
+    tex = np.full((16, 16), G)                           # sparse tufts; they survive only in nature cells
     for (x, y, c) in [(2, 3, GD), (3, 3, GD), (10, 1, GL), (13, 7, GD), (6, 9, GL), (7, 9, GL), (1, 13, GD), (11, 12, GD), (12, 12, GD)]:
         tex[y, x] = c
     img = np.tile(tex, (H // 16, W // 16)); solid = np.zeros((H, W), bool)
-    tree = np.full((16, 16), -1)
-    for y in range(16):
-        for x in range(16):
-            if (x - 7.5) ** 2 + (y - 8) ** 2 < 42: tree[y, x] = GD
-            if (x - 6) ** 2 + (y - 6) ** 2 < 7: tree[y, x] = GL
+    def stamp(px, x, y, block=True, inset=2):
+        h, w = px.shape; m = px >= 0
+        img[y:y + h, x:x + w][m] = px[m]
+        if block: solid[y + inset:y + h - inset, x + inset:x + w - inset] = True
     for s in t.get("scenery", []):
-        if s["kind"] in ("lake", "gravel"):
+        k = s["kind"]
+        if k in ("lake", "gravel"):
             (cx, cy), (rx, ry) = s["at"], s["size"]
-            m = ((xs - cx) / rx) ** 2 + ((ys - cy) / ry) ** 2 < 1
-            a, b = (WA, WL) if s["kind"] == "lake" else (SA, GL)
-            img[m] = a; img[m & ((xs * 3 + ys * 5) % 11 == 0)] = b
-            if s["kind"] == "lake": solid |= m
-        elif s["kind"] == "trees":
-            for (tx, ty) in s["at"]:
-                assert tx % 16 == 0 and ty % 16 == 0, "trees sit on the 16-pixel grid"
-                m = tree >= 0; img[ty:ty + 16, tx:tx + 16][m] = tree[m]
-                solid[ty + 3:ty + 13, tx + 3:tx + 13] = True
+            m, px = (sc.lake if k == "lake" else sc.gravel)(xs, ys, cx, cy, rx, ry)
+            img[m] = px[m]
+            if k == "lake": solid |= m
+            continue
+        spots = s["at"] if isinstance(s["at"][0], list) else [s["at"]]
+        for (x, y) in spots:
+            assert x % 16 == 0 and y % 8 == 0, f"{k} at {x},{y}: scenery sits on the grid"
+            if k == "trees": stamp(sc.TREE, x, y, inset=3)
+            elif k == "pines": stamp(sc.PINE, x, y, inset=4)
+            elif k == "bushes": stamp(sc.BUSH, x, y, inset=1)
+            elif k == "flowers": stamp(sc.FLOWERS, x, y, block=False)
+            elif k == "tents": stamp(sc.TENT, x, y)
+            elif k == "trucks": stamp(sc.truck(), x, y)
+            elif k == "boards": stamp(sc.board(), x, y, inset=0)
+            elif k == "stand": stamp(sc.stand(s["cells"]), x, y, inset=0)
+            elif k == "pits": stamp(sc.pits(s["cells"]), x, y, inset=0)
+            else: raise SystemExit(f"unknown scenery kind {k}")
     road = g.dist < half
     pit = t["pit"]; (px0, py0), (pw, ph) = pit["at"], pit["size"]     # pit bay: a tarmac box beside the track
     img[py0:py0 + ph, px0:px0 + pw] = RO; solid[py0:py0 + ph, px0:px0 + pw] = False
     img[py0, px0:px0 + pw] = WH; img[py0:py0 + ph, px0] = WH; img[py0:py0 + ph, px0 + pw - 1] = WH
-    for bx in range(px0 + 12, px0 + pw - 4, 12): img[py0 + 2:py0 + ph:2, bx] = WH
+    for bx in range(px0 + 16, px0 + pw - 4, 16): img[py0 + 1:py0 + ph - 3, bx] = WH
     img[road] = RO; solid[road] = False
     img[(g.dist >= half - 2) & (g.dist < half - 1)] = WH
-    kerb = (g.dist >= half) & (g.dist < half + 3) & (np.abs(g.curv[g.idx]) > 0.018) & (g.side == np.sign(g.curv[g.idx]))
-    stripe = (g.arc[g.idx] // 4).astype(int) % 2 == 0
+    curv = g.curv[g.idx]; inside = g.side == np.sign(curv)
+    kerb = (g.dist >= half) & (g.dist < half + 4) & (((np.abs(curv) > 0.016) & inside) | ((np.abs(curv) > 0.034) & ~inside))
+    stripe = (g.arc[g.idx] // 5).astype(int) % 2 == 0
     img[kerb & stripe] = RE; img[kerb & ~stripe] = WH; solid[kerb] = False
     along = g.arc[g.idx] - g.arc[g.i0]
     along = (along + g.length / 2) % g.length - g.length / 2
-    line = road & (np.abs(along) < 2.5)
+    lat = g.dist * g.side
+    line = road & (np.abs(along) < 3)                    # chequered start/finish line
     img[line & (((xs // 2) + (ys // 2)) % 2 == 0)] = WH
-    for k in range(4):                                   # grid boxes behind the line
-        box = road & (np.abs(along + 4 + k * 14) < 0.7) & ((g.side > 0) == (k % 2 == 0)) & (g.dist < half - 4) & (g.dist > 3)
-        img[box] = WH
-    img[:TOP] = RO; solid[:TOP] = True
+    for k in range(4):                                   # grid boxes: a bar with two short legs
+        a0 = -(5 + k * 14); sgn = -1 if k % 2 == 0 else 1; l = lat * sgn
+        bar = road & (np.abs(along - a0) < 0.8) & (l > 2.5) & (l < 12.5)
+        img[bar] = WH
+    img[:TOP] = K; img[TOP - 4:TOP - 2] = AC; solid[:TOP] = True
     return img, solid
 
 def fit(img):
-    """Give each 16x16 cell the palette that fits best; scenery that cannot fit becomes grass."""
-    idx = np.zeros_like(img); cellpal = np.zeros((H // 16, W // 16), int)
+    """Give each 16x16 cell the palette that fits best; anything that cannot fit becomes ground."""
+    idx = np.zeros_like(img); cellpal = np.zeros((H // 16, W // 16), int); lost = 0
     for cy in range(H // 16):
         for cx in range(W // 16):
             cell = img[cy * 16:cy * 16 + 16, cx * 16:cx * 16 + 16]; roles = np.unique(cell)
             best = None
-            for pi in (3, 0, 1, 2):
+            for pi in range(4):
                 miss = sum(int((cell == r).sum()) for r in roles if r not in PALS[pi])
                 if best is None or miss < best[0]: best = (miss, pi)
-            p = PALS[best[1]]; cellpal[cy, cx] = best[1]; m = np.zeros_like(cell)
+            p = PALS[best[1]]; cellpal[cy, cx] = best[1]; m = np.zeros_like(cell); lost += best[0]
             for r in roles:
-                m[cell == r] = p.index(r) if r in p else (p.index(RO) if r in (RE, WH, DR) and RO in p else 0)
+                if r in p: m[cell == r] = p.index(r)
             idx[cy * 16:cy * 16 + 16, cx * 16:cx * 16 + 16] = m
-    return idx, cellpal
+    return idx, cellpal, lost
 
 # -------------------------------------------------------------------- tiles
 def enc(t):
@@ -151,39 +163,48 @@ def enc(t):
     p1 = bytes(int(sum(((t[y, x] >> 1) << (7 - x)) for x in range(8))) for y in range(8))
     return p0 + p1
 
+def icon(rows): return np.array([[{".": 1, "y": 2, "a": 3}[c] for c in r] for r in rows])
+ICONS = {   # HUD tiles: black background, grey and accent
+ "BAR_ON":  icon(["........", ".aaaaaa.", ".aaaaaa.", ".aaaaaa.", ".aaaaaa.", ".aaaaaa.", ".aaaaaa.", "........"]),
+ "BAR_OFF": icon(["........", ".y.y.y..", "......y.", ".y......", "......y.", ".y......", "..y.y.y.", "........"]),
+ "SLICK":   icon(["..yyyy..", ".yyyyyy.", "yyy..yyy", "yy....yy", "yy....yy", "yyy..yyy", ".yyyyyy.", "..yyyy.."]),
+ "WET":     icon(["..yaya..", ".ayyyya.", "yyy..yyy", "ay....ya", "ya....ay", "yyy..yyy", ".ayyyya.", "..ayay.."]),
+ "SUN":     icon(["...a....", ".a.a.a..", "..aaa...", "aaaaaaa.", "..aaa...", ".a.a.a..", "...a....", "........"]),
+ "CLOUD":   icon(["........", "...yy...", "..yyyy..", ".yyyyyy.", "yyyyyyyy", "yyyyyyyy", ".yyyyyy.", "........"]),
+ "RAIN":    icon(["..yyyy..", ".yyyyyy.", "yyyyyyyy", "yyyyyyyy", "........", ".a..a..a", "a..a..a.", "........"]),
+ "FLAG":    icon(["y.a.a.a.", "ya.a.a..", "y.a.a.a.", "ya.a.a..", "y.......", "y.......", "y.......", "y......."]),
+}
+ICON_BASE = 0x40
+
 def fixed_tiles():
     t = {0x00: np.zeros((8, 8), int)}
     chk = (np.add.outer(np.arange(8), np.arange(8)) % 2) == 0
-    for base, dry in ((ROAD, 3), (ROADK, 2)):
-        t[base] = np.full((8, 8), 1)
-        half = np.full((8, 8), 1); full = np.full((8, 8), 1)
-        if dry == 3: half[chk] = 3; full[:] = 3
-        else:                                            # kerb cells have no dried colour: dither with white
-            half[chk & (np.arange(8)[:, None] % 4 == 0)] = 2; full[chk & (np.arange(8)[:, None] % 2 == 0)] = 2
-        t[base + 1], t[base + 2] = half, full
+    t[ROAD] = np.full((8, 8), 1)
+    half = np.full((8, 8), 1); half[chk] = 3
+    t[ROAD + 1], t[ROAD + 2] = half, np.full((8, 8), 3)
     for i, ch in enumerate(CHARS):
         g = np.full((8, 8), 1)
         for r in range(7):
             for c in range(5):
                 if FONT[ch][r][c] == "1": g[r, c + 1] = 2
         t[FONT_BASE + i] = g
+    for i, k in enumerate(ICONS): t[ICON_BASE + i] = ICONS[k]
     return t
 
 def compile_track(n, path):
     t = tomllib.load(open(path, "rb")); g = Geo(t)
-    img, solid = draw(t, g); idx, cellpal = fit(img); cellpal[:TOP // 16] = 3
+    img, solid = draw(t, g); idx, cellpal, lost = fit(img)
+    assert (cellpal[:TOP // 16] == 3).all(), "HUD cells must use the structures palette"
     fixed = fixed_tiles(); key2id = {}
-    for i, px in fixed.items():
-        if i not in (ROADK, ROADK + 1, ROADK + 2): key2id.setdefault(enc(px), i)
+    for i, px in fixed.items(): key2id.setdefault(enc(px), i)
     nt = np.zeros((30, 32), int); wet = np.zeros((30, 32), int); grid = {}
     for ty in range(30):
         for tx in range(32):
             px = idx[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8]
             pure = ty >= TOP // 8 and bool((img[ty * 8:ty * 8 + 8, tx * 8:tx * 8 + 8] == RO).all())
             if pure:
-                kerbcell = cellpal[ty // 2, tx // 2] == 0
-                assert cellpal[ty // 2, tx // 2] in (0, 3), "pure road tile outside a road cell"
-                nt[ty, tx] = ROADK if kerbcell else ROAD; wet[ty, tx] = 0xC0 if kerbcell else 0x80
+                assert cellpal[ty // 2, tx // 2] == 0, "pure road tile outside a road cell"
+                nt[ty, tx] = ROAD; wet[ty, tx] = 0x80
             else: grid[(ty, tx)] = enc(px)
     # most repeated tiles go to the common bank
     freq = {}
@@ -226,7 +247,7 @@ def compile_track(n, path):
         for sx in range(64):
             blk = img[sy * 4:sy * 4 + 4, sx * 4:sx * 4 + 4]
             if solid[sy * 4:sy * 4 + 4, sx * 4:sx * 4 + 4].sum() >= 8: surf[sy, sx] = 3
-            elif np.isin(blk, (RO, WH, RE, DR)).sum() >= 8: surf[sy, sx] = 0
+            elif np.isin(blk, (RO, WH, RE)).sum() >= 8: surf[sy, sx] = 0
             elif (blk == SA).sum() >= 8: surf[sy, sx] = 2
             else: surf[sy, sx] = 1
     packed = [int(surf[sy, sx] | surf[sy, sx + 1] << 2 | surf[sy, sx + 2] << 4 | surf[sy, sx + 3] << 6)
@@ -236,13 +257,18 @@ def compile_track(n, path):
     lut = np.array([[NES[fair[ROLES[r]]] for r in p] for p in PALS])
     ref = lut[np.repeat(np.repeat(cellpal, 16, 0), 16, 1), idx].astype(np.uint8)
     used = sum(len(b[1]) for b in bands)
-    info = dict(name=t["name"], bands=[b[0] * 8 for b in bands], unique=used, common=len(common), length=round(g.length),
+    if os.environ.get("CELLMAP"):                         # design aid: which 16x16 cells the road occupies
+        print("    " + "".join(f"{x * 16 // 100 % 10}" for x in range(16)) + "\n    " + "".join(f"{x * 16 // 10 % 10}" for x in range(16)))
+        for cy in range(TOP // 16, 15):
+            print(f"{cy * 16:3d} " + "".join("#" if np.isin(img[cy * 16:cy * 16 + 16, cx * 16:cx * 16 + 16], (RO, WH, RE)).any()
+                                             else "." for cx in range(16)))
+    info = dict(lost_pixels=lost, name=t["name"], bands=[b[0] * 8 for b in bands], unique=used, common=len(common), length=round(g.length),
                 half_width=t["half_width"], start=[float(g.path[g.i0][0]), float(g.path[g.i0][1])],
                 heading=float(math.atan2(g.tan[g.i0][1], g.tan[g.i0][0])))
     slots = []
     for k in range(4):                                   # grid: staggered pairs behind the line
         i = int(np.argmin(np.abs(((g.arc - g.arc[g.i0] + g.length / 2) % g.length - g.length / 2) + 12 + k * 14)))
-        nrm = np.array([-g.tan[i, 1], g.tan[i, 0]]) * (8 if k % 2 == 0 else -8)
+        nrm = np.array([-g.tan[i, 1], g.tan[i, 0]]) * (-7 if k % 2 == 0 else 7)
         slots.append([int(round(g.path[i, 0] + nrm[0])), int(round(g.path[i, 1] + nrm[1]))])
     grid_angle = int(round(math.atan2(g.tan[g.i0][1], g.tan[g.i0][0]) / (2 * math.pi) * 256)) & 255
     info["grid"] = slots; info["grid_angle"] = grid_angle
@@ -263,7 +289,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     tracks = [compile_track(n, p) for n, p in enumerate(sorted(glob.glob(os.path.join(src, "*.toml"))))]
     chr_ = bytearray(); L = ["; generated by tools/build_tracks.py", f"NUM_TRACKS = {len(tracks)}",
-                              f"T_ROAD = ${ROAD:02X}", f"T_ROADK = ${ROADK:02X}", f"TRACK_PAGES = {PAGES_PER_TRACK}", f"MAXWP = {MAXWP}"]
+                              f"T_ROAD = ${ROAD:02X}", f"TRACK_PAGES = {PAGES_PER_TRACK}", f"MAXWP = {MAXWP}"]
     for n, tr in enumerate(tracks):
         for p in tr["pages"]: chr_ += p
         Image.fromarray(tr["ref"]).save(f"{out}/ref_{n}.png")
@@ -297,8 +323,9 @@ def main():
         f.write("; generated by tools/build_tracks.py\n.charmap $20, $%02X\n" % ROAD)
         for i, ch in enumerate(CHARS): f.write(".charmap $%02X, $%02X\n" % (ord(ch), FONT_BASE + i))
         f.write("T_0 = $%02X\nT_A = $%02X\n" % (FONT_BASE + CHARS.index("0"), FONT_BASE + CHARS.index("A")))
+        for i, k in enumerate(ICONS): f.write("T_%s = $%02X\n" % (k, ICON_BASE + i))
     json.dump([tr["info"] for tr in tracks], open(f"{out}/tracks.json", "w"), indent=1)
     for n, tr in enumerate(tracks):
-        i = tr["info"]; print(f"track {n} {i['name']}: {i['length']} px, {i['common']} common + {i['unique']} unique tiles in {len(i['bands'])} bands at {i['bands']}")
+        i = tr["info"]; print(f"track {n} {i['name']}: {i['length']} px, {i['common']} common + {i['unique']} unique tiles in {len(i['bands'])} bands at {i['bands']}, {i['lost_pixels']} px lost to palette limits")
 
 if __name__ == "__main__": main()
