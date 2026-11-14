@@ -42,6 +42,7 @@ RS_DONE = 2
 race_begin:
     jsr load_track
     jsr cars_init
+    jsr weather_init
     lda #RS_GRID
     sta race_state
     lda #200
@@ -71,7 +72,8 @@ race_frame:
     inc race_time
     bne :+
     inc race_time+1
-:   lda #NCARS-1
+:   jsr weather_tick
+    lda #NCARS-1
     sta car
 @l: ldx car
     bne @rival
@@ -102,6 +104,7 @@ race_frame:
 @d: jsr car_draw
     dec car
     bpl @d
+    jsr rain_draw
     jmp hud_update
 
 .segment "RACE0"
@@ -194,7 +197,26 @@ smul:
 ; hold the speed limit of the next gate. The turn direction is the sign of the
 ; cross product of the car's heading and the direction to the target.
 ai_think:
+    jsr ai_pit_decide
     ldx car
+    lda c_pit,x
+    beq @line
+    lda pit_rect            ; pitting: aim for the middle of the box
+    clc
+    adc pit_rect+2
+    ror a
+    sec
+    sbc c_xh,x
+    sta ai_dx
+    lda pit_rect+1
+    clc
+    adc pit_rect+3
+    ror a
+    sec
+    sbc c_yh,x
+    sta ai_dy
+    jmp @steer
+@line:
     lda c_spd,x
     asl a
     rol a
@@ -215,6 +237,7 @@ ai_think:
     sec
     sbc c_yh,x
     sta ai_dy
+@steer:
     lda c_ang,x
     clc
     adc #64
@@ -268,7 +291,7 @@ ai_think:
     clc
     adc #1
 :   sta c_steer,x
-    ; speed: the gate's limit, scaled by nerve
+    ; speed: the gate's limit, scaled by nerve and by what the tyres will take
     ldy c_wp,x
     lda wp_s,y
     ldx car
@@ -278,6 +301,32 @@ ai_think:
     pla
     jsr mul8
     ldx car
+    ldy c_cond,x
+    lda cond_ai,y
+    ldx prod+1
+    jsr mul8
+    ldx car
+    lda c_pit,x
+    beq @lim
+    lda #52                 ; pit approach: slow, and stop once inside the box
+    cmp prod+1
+    bcs :+
+    sta prod+1
+:   lda c_arm,x
+    beq @lim
+    lda c_xh,x
+    cmp pit_rect
+    bcc @lim
+    cmp pit_rect+2
+    bcs @lim
+    lda c_yh,x
+    cmp pit_rect+1
+    bcc @lim
+    cmp pit_rect+3
+    bcs @lim
+    lda #0
+    sta prod+1
+@lim:
     lda c_spd,x
     cmp prod+1
     bcc @gas
@@ -721,7 +770,7 @@ trig_spd:
     sta prod+1
 @r: rts
 
-; Pull velocity component bv towards prod by 1/2^gshift of the difference.
+; Pull velocity component bv towards prod by gval/256 of the difference.
 ; The size of the difference is added to the current car's slip.
 blend:
     lda prod
@@ -731,25 +780,21 @@ blend:
     lda prod+1
     sbc bv+1
     sta bd+1
-    bpl @pos
+    sta sgn
+    bpl :+
     sec
     lda #0
     sbc bd
-    sta tmp0
+    sta bd
     lda #0
     sbc bd+1
-    jmp @mag
-@pos:
-    lda bd
-    sta tmp0
-    lda bd+1
-@mag:
-    cmp #2                  ; 2 pixels a frame or more: saturate
+    sta bd+1
+:   lda bd+1                ; slip: |difference| in 1/64 pixel, saturating
+    cmp #1
     bcs @sat
+    lda bd
     lsr a
-    ror tmp0
-    lsr tmp0                ; tmp0 = |difference| in 1/64 pixel
-    lda tmp0
+    lsr a
     bcc @add
 @sat:
     lda #255
@@ -760,19 +805,45 @@ blend:
     bcc :+
     lda #255
 :   sta c_slip,x
-    ldy gshift
-@s: lda bd+1
-    cmp #$80
-    ror bd+1
-    ror bd
-    dey
-    bne @s
+    lda bd                  ; |difference| * gval / 256
+    ldx gval
+    jsr mul8
+    lda prod+1
+    bne :+
+    lda bd+1                ; too small to scale: close the gap outright so cars come fully to rest
+    bne :+
+    lda bd
+:   sta tmp0
+    lda #0
+    sta tmp1
+    lda bd+1
+    beq :+
+    ldx gval
+    jsr mul8
+    lda prod
+    clc
+    adc tmp0
+    sta tmp0
+    lda prod+1
+    adc #0
+    sta tmp1
+:   lda sgn
+    bmi @neg
     lda bv
     clc
-    adc bd
+    adc tmp0
     sta bv
     lda bv+1
-    adc bd+1
+    adc tmp1
+    sta bv+1
+    rts
+@neg:
+    lda bv
+    sec
+    sbc tmp0
+    sta bv
+    lda bv+1
+    sbc tmp1
     sta bv+1
     rts
 
@@ -818,6 +889,10 @@ get_surface:
 
 ; Advance the car in `car` by one frame from its controls in c_in.
 car_update:
+    jsr service_tick
+    bcc :+
+    rts
+:   jsr car_cond
     ldx car
     lda #0
     sta c_slip,x
@@ -831,7 +906,19 @@ car_update:
 @speed:
     ldy c_surf,x
     lda surf_max,y
+    cpy #0
+    bne :+
+    ldy c_cond,x            ; on tarmac the tyres and the wet decide, less a little for wear
+    lda c_wear,x
+    lsr a
+    lsr a
+    lsr a
+    lsr a
     sta tmp1
+    lda cond_max,y
+    sec
+    sbc tmp1
+:   sta tmp1
     lda c_in,x
     and #BTN_B
     beq @nobrake
@@ -879,7 +966,18 @@ car_update:
 @vel:
     ldy c_surf,x
     lda surf_grip,y
-    sta gshift
+    cpy #0
+    bne :+
+    ldy c_cond,x
+    lda c_wear,x
+    lsr a
+    lsr a
+    lsr a
+    sta tmp0
+    lda cond_grip,y
+    sec
+    sbc tmp0
+:   sta gval
     ; x
     lda c_ang,x
     clc
@@ -950,7 +1048,8 @@ car_update:
     sta c_yl,x
     lda nyh
     sta c_yh,x
-    rts
+    jsr car_wear
+    jmp pit_check
 @hit:                       ; solid: stay put, bounce back at half speed
     ldx car
     sec
@@ -1044,6 +1143,6 @@ car_draw:
     rts
 
 surf_max:  .byte 160, 80, 48, 0     ; top speed on road, grass, gravel
-surf_grip: .byte 2, 3, 2, 2         ; velocity follows heading by 1/2^n per frame
+surf_grip: .byte 64, 36, 56, 64      ; share of the velocity error corrected per frame, /256
 
 .segment "RODATA"

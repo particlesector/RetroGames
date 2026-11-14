@@ -109,6 +109,10 @@ def draw(t, g):
                 m = tree >= 0; img[ty:ty + 16, tx:tx + 16][m] = tree[m]
                 solid[ty + 3:ty + 13, tx + 3:tx + 13] = True
     road = g.dist < half
+    pit = t["pit"]; (px0, py0), (pw, ph) = pit["at"], pit["size"]     # pit bay: a tarmac box beside the track
+    img[py0:py0 + ph, px0:px0 + pw] = RO; solid[py0:py0 + ph, px0:px0 + pw] = False
+    img[py0, px0:px0 + pw] = WH; img[py0:py0 + ph, px0] = WH; img[py0:py0 + ph, px0 + pw - 1] = WH
+    for bx in range(px0 + 12, px0 + pw - 4, 12): img[py0 + 2:py0 + ph:2, bx] = WH
     img[road] = RO; solid[road] = False
     img[(g.dist >= half - 2) & (g.dist < half - 1)] = WH
     kerb = (g.dist >= half) & (g.dist < half + 3) & (np.abs(g.curv[g.idx]) > 0.018) & (g.side == np.sign(g.curv[g.idx]))
@@ -243,7 +247,13 @@ def compile_track(n, path):
     grid_angle = int(round(math.atan2(g.tan[g.i0][1], g.tan[g.i0][0]) / (2 * math.pi) * 256)) & 255
     info["grid"] = slots; info["grid_angle"] = grid_angle
     wp = racing_line(t, g); info["waypoints"] = wp
-    return dict(wp=wp, grid=slots, grid_angle=grid_angle, t=t, g=g, nt=nt, wet=wet, attr=attr, surf=packed, pages=pages, bands=bands, ref=ref, info=info,
+    (px0, py0), (pw, ph) = t["pit"]["at"], t["pit"]["size"]
+    pit_rect = [px0 + 4, py0 + 3, px0 + pw - 4, py0 + ph + 2]
+    cx, cy = px0 + pw / 2, py0 + ph / 2
+    near = int(np.argmin([(x - cx) ** 2 + (y - cy) ** 2 for x, y in zip(wp["x"], wp["y"])]))
+    pit_wp = (near - 5) % MAXWP                           # where a rival commits to pitting
+    info.update(pit_rect=pit_rect, pit_wp=pit_wp, weather=t.get("weather", [0, 0]))
+    return dict(pit_rect=pit_rect, pit_wp=pit_wp, wp=wp, grid=slots, grid_angle=grid_angle, t=t, g=g, nt=nt, wet=wet, attr=attr, surf=packed, pages=pages, bands=bands, ref=ref, info=info,
                 idx=idx, cellpal=cellpal)
 
 def bl(xs): return ", ".join("$%02X" % int(x) for x in xs)
@@ -263,6 +273,8 @@ def main():
         L.append(f"  .byte {len(tr['bands'])}, {bl(splits[:MAX_BANDS - 1])}    ; bands, split scanlines")
         L.append(f"  .byte {tr['t']['laps']}")
         L.append(f"  .byte {bl(v for xy in tr['grid'] for v in xy)}, {tr['grid_angle']}    ; grid slots x,y and heading")
+        L.append(f"  .byte {bl(tr['pit_rect'])}, {tr['pit_wp']}    ; pit box x0,y0,x1,y1 and the waypoint where rivals decide")
+        L.append(f"  .byte {bl(tr['t'].get('weather', [0, 0]))}    ; rain starts / stops, seconds into the race (0 = never)")
         L.append(f"  .byte {bl(palette_bytes(tr['t']['theme'], False))}")
         L.append(f"  .byte {bl(palette_bytes(tr['t']['theme'], True))}")
         name = tr["t"]["name"].upper(); assert len(name) <= 16

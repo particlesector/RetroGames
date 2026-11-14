@@ -81,13 +81,14 @@ m_b:         .res 1
 prod:        .res 2
 bv:          .res 2         ; blend scratch: a velocity component
 bd:          .res 2
-gshift:      .res 1
 nxl:         .res 1
 nxh:         .res 1
 nyl:         .res 1
 nyh:         .res 1
 sgn:         .res 1
 demo:        .res 1
+gval:        .res 1         ; grip: share of the velocity error corrected each frame, /256
+rng:         .res 2
 
 .segment "BSS"
 vbuf:        .res 96        ; NMI VRAM queue: hi, lo, len, data..., 0
@@ -102,6 +103,10 @@ band_latch:  .res 4         ; last entry stays 0
 track_laps:  .res 1
 grid_xy:     .res 8         ; x,y for each grid slot
 grid_ang:    .res 1
+pit_rect:    .res 4         ; x0, y0, x1, y1
+pit_wp:      .res 1
+rain_at:     .res 1         ; seconds into the race; 0 = no rain
+rain_end:    .res 1
 
 .macro PRINT col, row, str
     lda #<(str)

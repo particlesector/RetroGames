@@ -20,9 +20,9 @@ for n, t in enumerate(TRACKS):
     check(f"{name}: the lights hold the grid for about 3 seconds", 170 < lights < 215, f"{lights} frames")
     check(f"{name}: all four cars finish the race", all(v(e, "c_fin", i) for i in range(4)), f"{f / 60:.0f} s")
     check(f"{name}: finishing order is 1 to 4", sorted(v(e, "c_fin", i) for i in range(4)) == [1, 2, 3, 4])
-    check(f"{name}: rivals stay on the tarmac in the dry", off < 30, f"{off} off-road frames")
+    check(f"{name}: rivals stay on the tarmac, rain included", off < 120, f"{off} off-road frames")
     check(f"{name}: positions are always a clean 1-2-3-4", badpos == 0)
-    check(f"{name}: lap times are sane and consistent", times and 5 < min(times) and max(times) < 14, f"{min(times):.2f} to {max(times):.2f} s")
+    check(f"{name}: lap times are sane (pit-stop laps included)", times and 5 < min(times) and max(times) < 20, f"{min(times):.2f} to {max(times):.2f} s")
     check(f"{name}: the player's finish ends the race", v(e, "race_state") == 2)
 
 # a parked player does not stop the race, and is last

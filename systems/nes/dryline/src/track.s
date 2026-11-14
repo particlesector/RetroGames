@@ -40,7 +40,7 @@ load_track:
     sta grid_xy,x
     iny
     inx
-    cpx #9
+    cpx #16                 ; grid, pit box and weather script are contiguous in RAM
     bne @gr
     ldx #0
 @pf:

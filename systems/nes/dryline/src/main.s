@@ -14,6 +14,7 @@
 .include "kernel.s"
 .include "track.s"
 .include "race.s"
+.include "weather.s"
 .include "tracks.inc"
 
 .segment "RODATA"
