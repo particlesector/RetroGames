@@ -38,8 +38,10 @@ class Game:
         self.e = Emu(ROM)
         self.e.frame(0, 10)
 
+    ALIAS = {"result": "free"}      # equates the label file doesn't list
+
     def __getitem__(self, name):
-        return self.e.ram[L[name] - 0x80]
+        return self.e.ram[L[self.ALIAS.get(name, name)] - 0x80]
 
     def arr(self, name, n):
         a = L[name] - 0x80
@@ -70,17 +72,58 @@ def bot_input(g):
     return 0
 
 
+COPIES = {0: [0], 1: [0, 16], 2: [0, 32], 3: [0, 16, 32], 4: [0, 64], 6: [0, 32, 64]}
+
+
+def chime_times(index):
+    """The song's chimes: (lane, time in pixels), from the compiled data."""
+    lines = (GAME / "build" / "songs.inc").read_text().splitlines()
+    start = lines.index(f"SONG{index}_MEL:") + 1
+    t, out = 0, []
+    for line in lines[start:]:
+        if ".byte" not in line:
+            break
+        vals = [int(v.strip().lstrip("$"), 16) if "$" in v else int(v) for v in line.split(".byte")[1].split(",")]
+        for k in range(0, len(vals), 2):
+            t += vals[k]
+            if vals[k + 1] < 0xFE:
+                out.append((vals[k + 1], t))
+    return out
+
+
+def unseen(g, chimes, misses):
+    """Chimes on screen (x 8 up to the kite's window) that this frame's list doesn't draw; a chime
+    missing two frames running counts as hidden (one is the flicker of a band's second group)."""
+    a = L["now"] - 0x80
+    now = g.e.ram[a] | g.e.ram[a + 1] << 8
+    lx, nus, chl = g.arr("lane_x", 10), g.arr("lane_nus", 10), g.arr("lane_chl", 10)
+    hidden = []
+    for i, (lane, t) in enumerate(chimes):
+        ahead = t - now
+        x = 116 - ahead
+        if not (4 < ahead and x >= 8):
+            continue
+        b = 9 - lane
+        shown = chl[b] == (L["CHIME"] & 0xFF) and any(abs(lx[b] + o - x) <= 1 for o in COPIES.get(nus[b], [0]))
+        misses[i] = 0 if shown else misses.get(i, 0) + 1
+        if misses[i] >= 2:
+            hidden.append(i)
+    return hidden
+
+
 def play_song(index, media=None):
     g = Game()
     g.start(index)
     total = g["total"]
     notes, caught = [], 0
     frames = 0
+    chimes, misses, g.hidden = chime_times(index), {}, set()
     if media:
         g.e.record_audio = True
     while g["mode"] in (M_PLAY, M_FALL) and frames < 60 * 300:
         g.e.frame(bot_input(g))
         frames += 1
+        g.hidden.update(unseen(g, chimes, misses))
         if g["caught"] != caught:
             caught = g["caught"]
             notes.append(g["m_note"])
@@ -122,6 +165,8 @@ def run_case(case, media):
         check(g["mode"] == M_RESULT and g["result"] == 2,
               f"{name}: the bot plays it perfectly ({g['caught']}/{total} chimes, {frames / 60:.0f} s)")
         check(notes == expected_lanes(i), f"{name}: each caught chime rings its own lane's note")
+        check(not g.hidden, f"{name}: every chime is drawn from the left edge on"
+              + (f" (hidden: {sorted(g.hidden)})" if g.hidden else ""))
         check(g["overruns"] == 0, f"{name}: no frame's logic outran its time")
         check(bool(g["stars"] & (1 << i)), f"{name}: a perfect song lights its star")
         if media and i == 0:

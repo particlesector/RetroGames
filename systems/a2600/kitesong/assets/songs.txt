@@ -81,7 +81,7 @@ F  | . . . . . . . .
 F  | . . . . . . . .
 phrase a
 F  | C5 D5 E5 . C5 D5 E5 .
-Bb | D5 - C5 - A4 - . .
+Bb | E5 - C5 - A4 - . .
 F  | C5 D5 E5 . G5 - E5 -
 C  | D5 - - - . . . .
 F  | C5 D5 E5 . C5 D5 E5 .

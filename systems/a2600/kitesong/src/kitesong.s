@@ -42,8 +42,8 @@ mode:       .res 1
 sel:        .res 1      ; the title's chosen song
 song:       .res 1
 free:       .res 1      ; nonzero: Free Flight
+result      = free      ; the results screen's (Free Flight never reaches it)
 stars:      .res 1      ; a bit a song: played perfectly
-result:     .res 1
 meter:      .res 1      ; the wind: 0 and the kite falls
 caught:     .res 1
 total:      .res 1      ; the song's chimes
@@ -84,6 +84,7 @@ lane_x:     .res NBANDS ; where player 1 goes
 lane_end:   .res 1      ; $FF: past the last band
 lane_nus:   .res NBANDS ; its copies (NUSIZ1)
 lane_chl:   .res NBANDS ; <CHIME, or <ZERO for none
+grp_bx:     .res NBANDS ; while building: a band's second group (FinishList)
 ; Free Flight's notes, newest first, drifting left
 NREC = 4
 rec_band:   .res NREC   ; $FF none
@@ -100,16 +101,15 @@ hud_bits:   .res 1
 hud_col:    .res 1
 hill_col:   .res 1
 ; scratch: the display list's build (bank 0) or the text and digit pointers (bank 1)
-scratch:    .res 18
-mask        = scratch       ; 10: a band's copies found so far
-t_ptr       = scratch + 10  ; 2
-t_time      = scratch + 12  ; 2
-t_n         = scratch + 14
-t_tmp       = scratch + 15
-t_band      = scratch + 16
+scratch:    .res 10
+t_ptr       = scratch       ; 2
+t_time      = scratch + 2   ; 2
+t_n         = scratch + 4
+t_tmp       = scratch + 5
+t_band      = scratch + 6
 dptr        = scratch       ; 8: four digit pointers
-tmp         = scratch + 16  ; bank 1's logic
-tmp2        = scratch + 17
+tmp         = scratch + 8   ; bank 1's logic
+tmp2        = scratch + 9
 
 
 ; =================================================================================================
@@ -501,56 +501,128 @@ LANE_C: .byte 12, 12, 12, 12, 4, 4, 4, 4, 4, 4
 LANE_F: .byte 19, 17, 15, 11, 29, 26, 23, 19, 17, 14
 
 ; ---- The display list ----
-; Each band shows its nearest chime, and up to two more behind it as player 1's copies when
-; they're 16, 32 or 64 pixels on (1, 2 or 4 eighths); others in the band wait their turn.
+; Each band draws its chimes with player 1: the nearest, and up to two more behind it as player
+; 1's copies when they're 16, 32 or 64 pixels on (1, 2 or 4 eighths). Chimes that don't fit
+; make a second group (its own nearest and copies), and a band with two groups shows them on
+; alternate frames (30 Hz flicker), so every chime is on screen from the left edge.
+; While building: lane_x is group A's nearest x and lane_nus its copies (bit 7 present, bits 0-3
+; as COPY_OFF's index); grp_bx is group B's nearest ($FF none), its copies in lane_nus bits 4-6
+; (16, 32, 64 on).
 ClearList:
-        lda #0
         ldx #NBANDS-1
-@c:     sta mask,x
+@c:     lda #0
+        sta lane_nus,x
+        lda #$FF
+        sta grp_bx,x
         dex
         bpl @c
         rts
 
+; The copy bit for a chime A pixels behind a group's nearest: 1 (16), 2 (32), 8 (64), else 0
+; (inline: the stack has no room for another call here).
+.macro COPYBIT
+        .local r
+        ldy #1
+        cmp #16
+        beq r
+        ldy #2
+        cmp #32
+        beq r
+        ldy #8
+        cmp #64
+        beq r
+        ldy #0
+r:      tya
+.endmacro
+
 ; A chime at x (A) in band X, nearest first.
 Insert:
         sta t_tmp
-        lda mask,x
-        bne @more
-        lda #$80
-        sta mask,x
+        lda lane_nus,x
+        bmi @a
+        lda #$80                ; the band's first: group A's nearest
+        sta lane_nus,x
         lda t_tmp
-        sta lane_nus,x          ; the nearest's x, until FinishList
+        sta lane_x,x
         rts
-@more:  lda lane_nus,x          ; its distance behind the nearest
+@a:     lda lane_x,x            ; one of A's copies?
         sec
         sbc t_tmp
-        ldy #1
-        cmp #16
-        beq @bit
-        ldy #2
-        cmp #32
-        beq @bit
-        ldy #8
-        cmp #64
-        bne @rts
-@bit:   tya
-        ora mask,x
+        COPYBIT
+        beq @b
+        sta t_band
+        lda lane_nus,x
         and #$0F
+        ora t_band
+        tay
+        lda ALLOWED,y
+        beq @b
+        lda lane_nus,x
+        and #$F0
+        sta t_band
+        tya
+        ora t_band
+        sta lane_nus,x
+        rts
+@b:     lda grp_bx,x            ; group B
+        cmp #$FF
+        bne @bc
+        lda t_tmp
+        sta grp_bx,x
+        rts
+@bc:    sec
+        sbc t_tmp
+        COPYBIT
+        beq @rts                ; a third group: not drawn (the songs' check keeps these out)
+        sta t_band
+        lda lane_nus,x
+        lsr
+        lsr
+        lsr
+        lsr
+        and #$07
+        tay
+        lda B_IDX,y
+        ora t_band
         tay
         lda ALLOWED,y
         beq @rts
-        tya
-        ora #$80
-        sta mask,x
+        lda IDX_B,y             ; back to bits 4-6
+        sta t_band
+        lda lane_nus,x
+        and #$8F
+        ora t_band
+        sta lane_nus,x
 @rts:   rts
 
+; Group B's copy bits (lane_nus bits 4-6, shifted down) to COPY_OFF's index, and back.
+B_IDX:  .byte 0, 1, 2, 3, 8, 9, 10, 11
+IDX_B:  .byte $00, $10, $20, $30, 0, 0, 0, 0, $40, 0, $60, 0, 0, 0, 0, 0
+
 FinishList:
+        lda frame_n
+        lsr                     ; carry: an odd frame shows group B where there is one
         ldx #NBANDS-1
-@f:     lda mask,x
-        beq @none
-        and #$0F
+@f:     lda lane_nus,x
+        bpl @none
+        bcc @a
+        ldy grp_bx,x
+        cpy #$FF
+        beq @a
+        lsr                     ; group B
+        lsr
+        lsr
+        lsr
+        and #$07
         tay
-        lda lane_nus,x
+        lda B_IDX,y
+        tay
+        lda grp_bx,x
+        jmp @put
+@a:     and #$0F                ; group A
+        tay
+        lda lane_x,x
+@put:   php
         sec
         sbc COPY_OFF,y
         sta lane_x,x
@@ -558,6 +630,7 @@ FinishList:
         sta lane_nus,x
         lda #<CHIME
         sta lane_chl,x
+        plp
         jmp @nx
 @none:  lda #0
         sta lane_x,x
