@@ -1,8 +1,8 @@
 # KITESONG — a song you play by flying
 
-An Atari 2600 rhythm flyer. Every note of the song is a chime on the wind, flying at the height
-of its pitch; fly the kite through it and the note rings. The bass and drums always play, so the
-music never stops, but the melody is yours: miss a chime and that note stays silent.
+An Atari 2600 rhythm flyer. Every note of the song is a little cloud on the wind, flying at the
+height of its pitch; fly the kite through it and the note rings. The bass and drums always play, so the
+music never stops, but the melody is yours: miss a cloud and that note stays silent.
 
 ![Dusk, on the PYNQ-Z2's HDMI through retro-silicon's 2600 core](docs/media/pynq-z2-hdmi.png)
 
@@ -24,7 +24,8 @@ demo flying Dusk, recorded from the PYNQ-Z2's HDMI output).
 | Button (Free Flight) | Play the note at the kite's height |
 | Select (or Reset in Free Flight) | Back to the title |
 
-- A chime reaches the kite exactly on its beat; be in its lane then and it rings.
+- A cloud (the game calls them chimes) reaches the kite exactly on its beat; be in its lane then
+  and its note rings. Each pitch has its own colour.
 - The **wind meter** at the top drops with every miss and refills with every catch. Run out of
   wind and the kite falls: try again.
 - Catch every chime of a song and it's **PERFECT!**: the title screen shows a song's star.
@@ -64,8 +65,10 @@ make test     # needs Pillow and a libretro Stella core (STELLA_CORE, default De
   the music driver, which once a frame times the song, plays the bass and drums, judges catches
   and misses, and builds the display list. They meet through a trampoline at `$FFE0`.
 - **The sky** is ten bands of 14 lines, one a lane. A band's first line places player 1 for its
-  chime, the second fine-moves it and sets its colour (each pitch its own) and its copies; up to
-  three chimes share a band as player 1's copies when they're 1, 2 or 4 eighths apart. The
+  chime (cloud), the second fine-moves it and sets its colour (each pitch its own) and its
+  copies; up to three share a band as player 1's copies when they're 1, 2 or 4 eighths apart, and
+  chimes at other spacings make a second group, shown on alternate frames (30 Hz flicker), so
+  every chime is on screen from the left edge. The
   background colour changes every line (the gradient), the sun is the reflected playfield, the
   kite is player 0 drawn by skip-draw. Every line strobes HMOVE, so the 8-pixel blank on the left
   is the same on every line.
@@ -77,7 +80,8 @@ make test     # needs Pillow and a libretro Stella core (STELLA_CORE, default De
 `tests/run_tests.py` runs on Stella's libretro core through `shared/tools/a2600_emu.py`:
 
 - every song played to its end by a bot that flies to each chime's lane: it must be PERFECT,
-  each caught chime ringing its own lane's note (each song's machine-checked solution);
+  each caught chime ringing its own lane's note (each song's machine-checked solution), and every
+  chime drawn (at least every other frame) from the left edge to the kite;
 - left alone, the kite runs out of wind and falls;
 - Free Flight's button plays the kite's note and leaves its chime;
 - the attract demo starts, flies its song perfectly and hands back to the title;
