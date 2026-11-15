@@ -1090,6 +1090,7 @@ PrepPlay:
         sec
 @d:     sbc #15
         bcs @d
+        .assert >@d = >*, error, "a positioning loop crosses a page: its branch takes a cycle more"
         eor #7
         asl
         asl
@@ -1203,6 +1204,7 @@ PosObj: sta WSYNC
         sec
 @d:     sbc #15
         bcs @d
+        .assert >@d = >*, error, "a positioning loop crosses a page: its branch takes a cycle more"
         eor #7
         asl
         asl
@@ -1213,6 +1215,7 @@ PosObj: sta WSYNC
         rts
 
 ; ---- The play kernel: 12 status lines, the sky's 10 bands, 40 lines of hills ----
+        .res 1, $EA            ; keeps the positioning loop below inside one page (never run)
 KernelPlay:
         sta WSYNC               ; status line 0
         sta HMOVE
@@ -1253,6 +1256,7 @@ KernelPlay:
         sec
 @div:   sbc #15
         bcs @div
+        .assert >@div = >*, error, "a positioning loop crosses a page: its branch takes a cycle more"
         eor #7
         asl
         asl

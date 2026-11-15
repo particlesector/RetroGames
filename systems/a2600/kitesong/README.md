@@ -74,6 +74,9 @@ make test     # needs Pillow and a libretro Stella core (STELLA_CORE, default De
   is the same on every line.
 - **Timing.** The wind moves 16 pixels an eighth note, whatever the tempo, so a chime is 16, 32 or
   64 pixels from its neighbours, the spacings player copies have.
+- **Placing objects.** The usual divide-by-15 loop (`sbc #15` / `bcs`) must not cross a page: a
+  branch across one takes a cycle more, each 15-pixel step becomes 18 and objects jump 3 pixels
+  every 15. The source asserts it for each such loop.
 
 ## Testing
 

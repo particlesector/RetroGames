@@ -173,6 +173,26 @@ def run_case(case, media):
             g.e.save_audio(os.path.join(media, "dusk.wav"))
             g.e.frame(0, 10)
             g.e.screenshot().save(os.path.join(media, "result.png"))
+    elif case == len(names) + 1:                   # the clouds move evenly
+        from collections import Counter
+        g = Game()
+        g.start(0)
+        offs = Counter()
+        for _ in range(1500):
+            lx, nus, chl = g.arr("lane_x", 10), g.arr("lane_nus", 10), g.arr("lane_chl", 10)
+            g.e.frame(bot_input(g))
+            im = g.e.screenshot()
+            for b in range(5):                     # the top bands, clear of the sun
+                if chl[b] != (L["CHIME"] & 0xFF) or nus[b] != 0 or lx[b] >= 95:
+                    continue
+                row = 27 + 14 * b + 7              # the cloud's widest row in Stella's picture
+                px = [im.getpixel((x, row)) for x in range(160)]
+                s = [x for x in range(8, 112) if px[x] != px[150]]
+                if s:
+                    offs[s[0] - lx[b]] += 1
+        top = offs.most_common(1)[0]
+        check(top[1] >= 0.98 * sum(offs.values()),
+              f"a cloud is drawn where the list says, 1 pixel a step (offsets seen: {dict(offs)})")
     elif case == len(names) - 1:                   # left alone, the kite runs out of wind
         g = Game()
         g.start(0)
@@ -229,7 +249,7 @@ def main():
     if "--case" in sys.argv:
         sys.exit(1 if run_case(int(sys.argv[sys.argv.index("--case") + 1]), media) else 0)
     fails = 0
-    for case in range(len(song_names()) + 2):
+    for case in range(len(song_names()) + 3):
         cmd = [sys.executable, __file__, "--case", str(case)] + (["--media", media] if media else [])
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         print(r.stdout, end="")
