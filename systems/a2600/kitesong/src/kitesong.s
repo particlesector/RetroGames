@@ -774,9 +774,9 @@ Frame:  lda #2
         lda #0
         sta WSYNC
         sta VSYNC
-        lda #42
-        sta TIM64T
-        inc frame_n
+        lda #41                 ; VBLANK's time: it runs out mid-line, so the wait's 7-cycle
+        sta TIM64T              ; step can't tip the picture's first line into the next (frames
+        inc frame_n             ; were 262 or 263 lines and the picture shook)
         jsr Logic
         bit TIMINT              ; the logic ran past its time (tests check this stays 0)
         bpl @vb
@@ -796,7 +796,7 @@ Overscan:
         sta WSYNC
         lda #2
         sta VBLANK
-        lda #38
+        lda #38                 ; the overscan's: with VBLANK's, 262 lines a frame
         sta TIM64T
         lda #0
         sta PF0
@@ -1298,14 +1298,15 @@ KernelPlay:
         bne @line
         lda nextx
         bpl @band
-        lda hill_col
-        sta COLUPF
-        jmp Hills
+        jmp Hills               ; (the last drawn line ends by cycle 66 even with page crossings)
 
-; 40 lines of hills, then the overscan.
+; 40 lines of hills, then the overscan. Their colour is set on each line (before the
+; playfield's first block): the line before may end late.
 Hills:  ldy #39
 @h:     sta WSYNC
         sta HMOVE
+        lda hill_col
+        sta COLUPF
         lda HILL0,y
         sta PF0
         lda HILL1,y

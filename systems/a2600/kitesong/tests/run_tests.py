@@ -182,10 +182,12 @@ def run_case(case, media):
             lx, nus, chl = g.arr("lane_x", 10), g.arr("lane_nus", 10), g.arr("lane_chl", 10)
             g.e.frame(bot_input(g))
             im = g.e.screenshot()
+            sky0 = next(y for y in range(14, 60) if im.getpixel((150, y)) != (0, 0, 0)
+                        and im.getpixel((150, y - 1)) == (0, 0, 0))   # the sky's first line
             for b in range(5):                     # the top bands, clear of the sun
                 if chl[b] != (L["CHIME"] & 0xFF) or nus[b] != 0 or lx[b] >= 95:
                     continue
-                row = 27 + 14 * b + 7              # the cloud's widest row in Stella's picture
+                row = sky0 + 14 * b + 7            # the cloud's widest row
                 px = [im.getpixel((x, row)) for x in range(160)]
                 s = [x for x in range(8, 112) if px[x] != px[150]]
                 if s:
