@@ -32,6 +32,7 @@ Rules of thumb:
 | System | Game | Status |
 |---|---|---|
 | NES | [TIDEBELL](systems/nes/tidebell/) | Complete |
+| Atari 2600 | [KITESONG](systems/a2600/kitesong/) | Pitch |
 
 ## Building
 
