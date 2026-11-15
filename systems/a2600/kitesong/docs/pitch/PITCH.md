@@ -1,7 +1,7 @@
 # KITESONG — a song you play by flying
 
-*Pitch for an Atari 2600 game. Nothing is built yet: these are mockups and a
-rendered theme, for a yes or a no.*
+*The original pitch, kept for reference; the game has since been built (see the [README](../../README.md)). These are mockups and a
+rendered theme.*
 
 ![Title screen mockup](title.png)
 

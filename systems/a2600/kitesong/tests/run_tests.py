@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""KITESONG's tests, on Stella's libretro core (shared/tools/a2600_emu.py).
+
+- Every song is played to its end by a bot that flies to each chime's lane: it must catch every
+  chime (PERFECT), with each caught note ringing on its lane's pitch. This is each song's
+  machine-checked solution: a song the bot can't perfect doesn't ship.
+- Left alone, the kite runs out of wind and falls: TRY AGAIN.
+- Free Flight: the button plays the note at the kite's height and leaves a chime behind.
+- The logic never outruns its VBLANK or overscan time (`overruns` stays 0).
+
+With --media DIR it also saves screenshots and a recording of a perfect DUSK.
+"""
+import os
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+GAME = HERE.parent
+sys.path.insert(0, str(GAME.parents[2] / "shared" / "tools"))
+from a2600_emu import Emu, labels, FIRE, UP, DOWN, LEFT, RIGHT, RESET, SELECT  # noqa: E402
+
+ROM = str(GAME / "build" / "kitesong.F8")
+L = labels(str(GAME / "build" / "labels.txt"))
+M_TITLE, M_PLAY, M_FALL, M_RESULT = 0, 1, 2, 3
+LANE_Y = [1, 13, 25, 37, 49, 61, 73, 85, 97, 109]
+
+
+def song_names():
+    names = []
+    for line in (GAME / "assets" / "songs.txt").read_text().splitlines():
+        if line.startswith("song "):
+            names.append(line.split(None, 1)[1].strip())
+    return names
+
+
+class Game:
+    def __init__(self):
+        self.e = Emu(ROM)
+        self.e.frame(0, 10)
+
+    def __getitem__(self, name):
+        return self.e.ram[L[name] - 0x80]
+
+    def arr(self, name, n):
+        a = L[name] - 0x80
+        return list(self.e.ram[a:a + n])
+
+    def press(self, button):
+        self.e.frame(button, 2)
+        self.e.frame(0, 2)
+
+    def start(self, index):
+        while self["sel"] != index:
+            self.press(RIGHT)
+        self.press(FIRE)
+        assert self["mode"] == M_PLAY, "the song didn't start"
+
+
+def bot_input(g):
+    """Fly toward the next chime's lane."""
+    lane = g["cur_lane"]
+    if lane >= 10:
+        return 0
+    target = LANE_Y[9 - lane]
+    y = g["kite_y"]
+    if y > target + 1:
+        return UP
+    if y < target - 1:
+        return DOWN
+    return 0
+
+
+def play_song(index, media=None):
+    g = Game()
+    g.start(index)
+    total = g["total"]
+    notes, caught = [], 0
+    frames = 0
+    if media:
+        g.e.record_audio = True
+    while g["mode"] in (M_PLAY, M_FALL) and frames < 60 * 300:
+        g.e.frame(bot_input(g))
+        frames += 1
+        if g["caught"] != caught:
+            caught = g["caught"]
+            notes.append(g["m_note"])
+        if media and frames == 30 * 60 // 2:
+            g.e.screenshot().save(os.path.join(media, "play.png"))
+    return g, total, notes, frames
+
+
+def expected_lanes(index):
+    """The song's chime lanes in order, from the compiled data."""
+    text = (GAME / "build" / "songs.inc").read_text()
+    lines = text.splitlines()
+    start = lines.index(f"SONG{index}_MEL:") + 1
+    lanes = []
+    for line in lines[start:]:
+        if not line.strip().startswith(".byte"):
+            break
+        vals = [v.strip() for v in line.strip()[5:].split(",")]
+        for k in range(1, len(vals), 2):
+            v = int(vals[k].lstrip("$"), 16)
+            if v < 0xFE:
+                lanes.append(v)
+    return lanes
+
+
+def run_case(case, media):
+    """One case in this process (Stella's core holds one game a process)."""
+    names = song_names()
+    fails = 0
+
+    def check(ok, what):
+        nonlocal fails
+        print(("ok   " if ok else "FAIL ") + what, flush=True)
+        fails += not ok
+
+    if case < len(names) - 1:                      # a song (the last is Free Flight)
+        i, name = case, names[case]
+        g, total, notes, frames = play_song(i, media if (media and i == 0) else None)
+        check(g["mode"] == M_RESULT and g["result"] == 2,
+              f"{name}: the bot plays it perfectly ({g['caught']}/{total} chimes, {frames / 60:.0f} s)")
+        check(notes == expected_lanes(i), f"{name}: each caught chime rings its own lane's note")
+        check(g["overruns"] == 0, f"{name}: no frame's logic outran its time")
+        check(bool(g["stars"] & (1 << i)), f"{name}: a perfect song lights its star")
+        if media and i == 0:
+            g.e.save_audio(os.path.join(media, "dusk.wav"))
+            g.e.frame(0, 10)
+            g.e.screenshot().save(os.path.join(media, "result.png"))
+    elif case == len(names) - 1:                   # left alone, the kite runs out of wind
+        g = Game()
+        g.start(0)
+        fell = False
+        for _ in range(60 * 60):
+            g.e.frame(0)
+            fell |= g["mode"] == M_FALL
+            if g["mode"] == M_RESULT:
+                break
+        check(fell and g["mode"] == M_RESULT and g["result"] == 0, "left alone, the kite falls: TRY AGAIN")
+    elif case == len(names):                       # attract mode
+        g = Game()
+        g.e.frame(0, 700)
+        check(g["mode"] == M_PLAY and g["demo"] == 1, "ten quiet seconds on the title start a demo")
+        while g["mode"] == M_PLAY:
+            g.e.frame(0)
+        check(g["result"] == 2, f"the demo flies its song perfectly ({g['caught']}/{g['total']})")
+        g.e.frame(0, 400)
+        check(g["mode"] == M_TITLE, "after the demo's results, back to the title")
+        g.e.frame(0, 700)
+        g.e.frame(0, 60)
+        g.press(UP)
+        check(g["mode"] == M_TITLE, "touching the joystick ends a demo")
+    else:                                          # Free Flight
+        g = Game()
+        if media:
+            g.e.frame(0, 30)
+            g.e.screenshot().save(os.path.join(media, "title.png"))
+        g.start(len(names) - 1)
+        ok = True
+        for band in (0, 4, 9, 2):
+            target = LANE_Y[band]
+            for _ in range(80):
+                y = g["kite_y"]
+                g.e.frame(UP if y > target + 1 else DOWN if y < target - 1 else 0)
+            g.press(FIRE)
+            ok &= g["m_note"] == 9 - band and g.arr("rec_band", 1)[0] == band and g["m_vol"] > 0
+            g.e.frame(0, 20)
+        if media:
+            g.e.screenshot().save(os.path.join(media, "free.png"))
+        check(ok, "Free Flight: the button plays the kite's note and leaves its chime")
+        g.press(SELECT)
+        check(g["mode"] == M_TITLE, "Select leaves Free Flight for the title")
+        check(g["overruns"] == 0, "Free Flight: no frame's logic outran its time")
+    return fails
+
+
+def main():
+    import subprocess
+    media = None
+    if "--media" in sys.argv:
+        media = sys.argv[sys.argv.index("--media") + 1]
+        os.makedirs(media, exist_ok=True)
+    if "--case" in sys.argv:
+        sys.exit(1 if run_case(int(sys.argv[sys.argv.index("--case") + 1]), media) else 0)
+    fails = 0
+    for case in range(len(song_names()) + 2):
+        cmd = [sys.executable, __file__, "--case", str(case)] + (["--media", media] if media else [])
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        print(r.stdout, end="")
+        fails += r.returncode != 0
+    print("all passed" if not fails else f"{fails} case(s) failed")
+    sys.exit(1 if fails else 0)
+
+
+if __name__ == "__main__":
+    main()

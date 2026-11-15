@@ -53,3 +53,12 @@ linker's label file (`labels()`), so tests refer to variables by name.
   through to; check this when adding palette-swap or mid-frame effects.
 - ca65 `.charmap` applies to every later string, including the iNES header: write the
   header as numeric bytes.
+
+## Atari 2600 notes (from KITESONG)
+
+- `shared/tools/a2600_emu.py` drives Stella's libretro core (`STELLA_CORE`) like `nes_emu.py`,
+  without numpy. The core holds one game a process: run each test case in its own process.
+- Count kernel cycles in comments; a subroutine call between two kernel blocks can push a line's
+  work past its end and add a line (inline macros instead). Check a frame's line count (262).
+- Count logic overruns with the RIOT's timer flag (`TIMINT`) and make the tests assert 0.
+- Only notes the TIA plays in tune: `tools/build_data.py` (KITESONG) lists them by waveform.

@@ -11,4 +11,4 @@ Atari 2600 (VCS) projects.
 
 | Game | Status |
 |---|---|
-| [KITESONG](kitesong/) | Pitch |
+| [KITESONG](kitesong/) | Playable |
