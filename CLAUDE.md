@@ -62,3 +62,5 @@ linker's label file (`labels()`), so tests refer to variables by name.
   work past its end and add a line (inline macros instead). Check a frame's line count (262).
 - Count logic overruns with the RIOT's timer flag (`TIMINT`) and make the tests assert 0.
 - Only notes the TIA plays in tune: `tools/build_data.py` (KITESONG) lists them by waveform.
+- A divide-by-15 positioning loop (`sbc #15` / `bcs`) must not cross a page, or every coarse step
+  is 18 pixels and objects jump: assert `>loop = >*` after it (KITESONG does).
