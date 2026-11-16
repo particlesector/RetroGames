@@ -11,7 +11,7 @@ demo flying Dusk, recorded from the PYNQ-Z2's HDMI output).
 
 - **ROM:** [`release/kitesong.F8`](release/kitesong.F8) (8 KB, F8 bank switching, NTSC)
 - **Songs:** six (Dusk, Night, Gale, Dawn, Drift, Tide) and Free Flight
-- **Status:** playable. Tested on Stella (the bot) and on FPGA hardware through
+- **Status:** complete. Tested on Stella (the bot), played by its owner on FPGA hardware, through
   [retro-silicon](https://github.com/particlesector/retro-silicon)'s 2600 core; see [Testing](#testing).
 
 ## How to play
@@ -94,7 +94,8 @@ On FPGA hardware, through retro-silicon's 2600 core: the title (frame 60) and th
 (frame 1500, with its first 708,257 sound samples) match Stella's frame and sound CRCs on the
 Tang Nano 20K, the Tang Console 138K and the PYNQ-Z2, and the video above is the PYNQ-Z2's HDMI.
 
-Not verified: a real 2600; how the songs feel to a human player (only the bot has finished them);
-emulators other than Stella.
+Played on the Tang Nano 20K with a USB gamepad, through retro-silicon's 2600 core on a monitor
+(Nov 15, 2026): the songs, the colours and Free Flight. Not verified: a real 2600, and emulators other
+than Stella.
 
 Pitch and mockups: [docs/pitch/PITCH.md](docs/pitch/PITCH.md).
