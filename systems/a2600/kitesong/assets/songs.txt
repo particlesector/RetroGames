@@ -1,0 +1,175 @@
+# KITESONG's songs. Compiled by tools/build_data.py.
+#
+# A song: a header, its phrases, then its order.
+#   song NAME       title shown on the title screen (letters, digits, space)
+#   tempo F         frames an eighth note lasts (16: 112.5 beats a minute)
+#   sky THEME       dusk, night, gale or dawn
+#   beat N          the bass and drum pattern (0-3, below)
+#   phrase ID       then bars of exactly 8 eighths, one per line:
+#     CHORD | t t t t t t t t
+#   order ID ID ... the phrases played in turn
+#
+# Chords: C F Am Bb G (the bass's root: C2 F2 A2 Bb2 on the buzzy waveform, G3 on the pure one).
+# Melody tokens: a note (C4 D4 E4 A4 C5 D5 E5 G5 A5 C6: the notes the TIA plays in tune),
+# - holds the note before, . rests. Each note is a chime.
+#
+# Beats (eighths 0-7): 0 bass on 0 2 4 6, snare on 3 and 7
+#                      1 bass on 0 and 4, snare on 2 and 6 (half time)
+#                      2 bass on every eighth, snare on 4 (driving)
+#                      3 bass on 0 3 6, no snare (lilting)
+
+song DUSK
+tempo 16
+sky dusk
+beat 0
+phrase intro
+C  | . . . . . . . .
+C  | . . . . . . . .
+phrase a
+C  | E5 - G5 - A5 - G5 E5
+Am | D5 - E5 - C5 - - -
+F  | A5 - C6 - A5 - G5 -
+C  | G5 - - - E5 - - -
+C  | E5 - G5 - A5 - G5 A5
+Am | C6 - - - A5 - G5 -
+F  | A5 - G5 - E5 - D5 -
+C  | C5 - - - - - . .
+phrase b
+F  | A4 - C5 - D5 - C5 -
+C  | E5 - D5 - C5 - . .
+F  | A4 - C5 - D5 - E5 -
+G  | D5 - - - . . . .
+F  | A4 - C5 - D5 - C5 -
+C  | E5 - G5 - E5 - D5 -
+F  | C5 - D5 - E5 - G5 -
+C  | E5 - - - - - . .
+order intro a b a
+
+song NIGHT
+tempo 16
+sky night
+beat 3
+phrase intro
+Am | . . . . . . . .
+Am | . . . . . . . .
+phrase a
+Am | A4 - - C5 - - E5 -
+F  | D5 - - C5 - - A4 -
+C  | C5 - - E5 - - G5 -
+G  | E5 - - D5 - - . .
+Am | A4 - - C5 - - E5 -
+F  | A5 - - G5 - - E5 -
+G  | D5 - - E5 - - D5 -
+Am | C5 - - - - - . .
+phrase b
+F  | C6 - A5 - G5 - A5 -
+C  | G5 - E5 - D5 - E5 -
+F  | C6 - A5 - G5 - E5 -
+G  | D5 - - - . . . .
+Am | E5 - D5 - C5 - D5 -
+F  | E5 - G5 - A5 - G5 -
+G  | E5 - D5 - C5 - D5 -
+Am | A4 - - - - - . .
+order intro a b a b
+
+song GALE
+tempo 12
+sky gale
+beat 2
+phrase intro
+F  | . . . . . . . .
+F  | . . . . . . . .
+phrase a
+F  | C5 D5 E5 . C5 D5 E5 .
+Bb | E5 - C5 - A4 - . .
+F  | C5 D5 E5 . G5 - E5 -
+C  | D5 - - - . . . .
+F  | C5 D5 E5 . C5 D5 E5 .
+Bb | G5 - E5 - D5 - . .
+C  | E5 - D5 - C5 - D5 -
+F  | C5 - - - . . . .
+phrase b
+Bb | A5 - G5 - A5 - G5 -
+F  | E5 - D5 - C5 - . .
+Bb | A5 - G5 - E5 - G5 -
+C  | A5 - - - . . . .
+Bb | C6 - A5 - G5 - A5 -
+F  | E5 - G5 - A5 - G5 -
+C  | E5 - D5 - E5 - G5 -
+F  | E5 - - - . . . .
+order intro a a b a
+
+song DAWN
+tempo 16
+sky dawn
+beat 0
+phrase intro
+C  | . . . . . . . .
+G  | . . . . . . . .
+phrase a
+C  | C5 - E5 - G5 - C6 -
+G  | A5 - G5 - E5 - D5 -
+Am | E5 - A5 - G5 - E5 -
+F  | D5 - - - C5 - . .
+C  | C5 - E5 - G5 - C6 -
+G  | A5 - G5 - E5 - G5 -
+F  | A5 - C6 - A5 - G5 -
+C  | C6 - - - - - . .
+phrase b
+Am | A4 - C5 - E5 - D5 -
+F  | C5 - D5 - E5 - . .
+C  | G5 - E5 - D5 - C5 -
+G  | D5 - - - . . . .
+Am | A4 - C5 - E5 - G5 -
+F  | A5 - G5 - E5 - D5 -
+G  | E5 - G5 - A5 - G5 -
+C  | C6 - - - - - . .
+order intro a b a
+
+song DRIFT
+tempo 20
+sky dusk
+beat 1
+phrase intro
+F  | . . . . . . . .
+C  | . . . . . . . .
+phrase a
+F  | A4 - - - C5 - - -
+C  | E5 - - - D5 - - -
+Am | C5 - - - A4 - - -
+G  | D5 - - - - - . .
+F  | A4 - - - C5 - D5 -
+C  | E5 - - - G5 - - -
+Am | E5 - D5 - C5 - - -
+C  | C5 - - - - - . .
+order intro a a
+
+song TIDE
+tempo 14
+sky night
+beat 0
+phrase intro
+C  | . . . . . . . .
+C  | . . . . . . . .
+phrase a
+C  | C5 D5 E5 G5 A5 G5 E5 D5
+Am | E5 - - - A4 - - -
+F  | A4 C5 D5 E5 G5 E5 D5 C5
+C  | D5 - - - G5 - - -
+C  | C5 D5 E5 G5 A5 G5 A5 C6
+Am | A5 - - - E5 - - -
+F  | D5 E5 G5 A5 G5 E5 D5 E5
+C  | C5 - - - - - . .
+order intro a a
+
+# Free Flight: no chimes; the button plays the note at the kite's height over this loop.
+song FREE
+tempo 16
+sky dawn
+beat 3
+phrase loop
+C  | . . . . . . . .
+Am | . . . . . . . .
+F  | . . . . . . . .
+G  | . . . . . . . .
+order loop
